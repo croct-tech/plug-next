@@ -1,144 +1,154 @@
-import {ContentFetcher} from '@croct/sdk/contentFetcher';
+import {fetchContent as loadContent, FetchOptions as ResolvedFetchOptions} from '@croct/plug-react/api';
 import {FetchResponse} from '@croct/plug/plug';
-import {SlotContent} from '@croct/plug/slot';
 import {fetchContent, FetchOptions} from './fetchContent';
-
-const mockFetch: ContentFetcher['fetch'] = jest.fn();
+import {getRequestContext, RequestContext} from '@/utils/request';
 
 jest.mock(
-    '@croct/sdk/contentFetcher',
+    'server-only',
     () => ({
         __esModule: true,
-        /*
-         * eslint-disable-next-line prefer-arrow-callback --
-         * The mock can't be an arrow function because calling new on
-         * an arrow function is not allowed in JavaScript.
-         */
-        ContentFetcher: jest.fn(function constructor(this: ContentFetcher) {
-            this.fetch = mockFetch;
-        }),
+    }),
+);
+
+jest.mock(
+    'next/headers',
+    () => ({
+        __esModule: true,
+        headers: jest.fn(() => new Headers()),
+    }),
+);
+
+jest.mock(
+    '@croct/plug-react/api',
+    () => ({
+        __esModule: true,
+        ...jest.requireActual('@croct/plug-react/api'),
+        fetchContent: jest.fn(),
+    }),
+);
+
+jest.mock(
+    '@/utils/request',
+    () => ({
+        __esModule: true,
+        getRequestContext: jest.fn(),
     }),
 );
 
 describe('fetchContent', () => {
     const apiKey = '00000000-0000-0000-0000-000000000000';
+    const request = {
+        clientId: '12345678-1234-1234-1234-123456789012',
+        uri: 'http://example.com',
+        referrer: 'http://referrer.com',
+        clientIp: '192.0.0.1',
+        clientAgent: 'user-agent',
+        previewToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJodHRwczovL2Nyb2N0LmlvIiwi'
+            + 'YXVkIjoiaHR0cHM6Ly9jcm9jdC5pbyIsImlhdCI6MTQ0MDk3OTEwMCwiZXhwIjoxNDQwOTc5M'
+            + 'jAwLCJtZXRhZGF0YSI6eyJleHBlcmllbmNlTmFtZSI6IkRldmVsb3BlcnMgZXhwZXJpZW5jZS'
+            + 'IsImV4cGVyaW1lbnROYW1lIjoiRGV2ZWxvcGVycyBleHBlcmltZW50IiwiYXVkaWVuY2VOYW1l'
+            + 'IjoiRGV2ZWxvcGVycyBhdWRpZW5jZSIsInZhcmlhbnROYW1lIjoiSmF2YVNjcmlwdCBEZXZlbG'
+            + '9wZXJzIn19.',
+    } satisfies RequestContext;
 
     afterEach(() => {
         jest.clearAllMocks();
     });
 
-    it('should forward the call to the content fetcher', async () => {
-        const slotId = 'slot-id';
+    type FetchScenario = {
+        request: RequestContext,
+        options: FetchOptions<any>,
+        resolvedOptions: ResolvedFetchOptions,
+    };
 
-        const options: FetchOptions = {
-            apiKey: apiKey,
-            baseEndpointUrl: 'https://croct.example.com',
-            timeout: 100,
-            fallback: {
-                _component: 'component-id',
+    it.each<[string, FetchScenario]>(Object.entries({
+        'with partial context': {
+            request: {
+                clientId: request.clientId,
             },
-        };
+            options: {},
+            resolvedOptions: {
+                apiKey: apiKey,
+                clientId: request.clientId,
+                clientIp: '127.0.0.1',
+                extra: {
+                    cache: 'no-store',
+                },
+            },
+        },
+        'with full contex': {
+            request: request,
+            options: {},
+            resolvedOptions: {
+                apiKey: apiKey,
+                previewToken: request.previewToken,
+                clientId: request.clientId,
+                clientIp: request.clientIp,
+                clientAgent: request.clientAgent,
+                context: {
+                    page: {
+                        url: request.uri,
+                        referrer: request.referrer,
+                    },
+                },
+                extra: {
+                    cache: 'no-store',
+                },
+            },
+        },
+        'with URL and without referrer': {
+            request: {
+                clientId: request.clientId,
+                uri: request.uri,
+            },
+            options: {},
+            resolvedOptions: {
+                apiKey: apiKey,
+                clientId: request.clientId,
+                clientIp: '127.0.0.1',
+                context: {
+                    page: {
+                        url: 'http://example.com',
+                    },
+                },
+                extra: {
+                    cache: 'no-store',
+                },
+            },
+        },
+        'with overridden options': {
+            request: {
+                clientId: request.clientId,
+            },
+            options: {
+                extra: {
+                    cache: 'force-cache',
+                },
+            },
+            resolvedOptions: {
+                apiKey: apiKey,
+                clientId: request.clientId,
+                clientIp: '127.0.0.1',
+                extra: {
+                    cache: 'force-cache',
+                },
+            },
+        },
+    }))('should forward the call %s to the fetchContent function', async (_, scenario) => {
+        process.env.CROCT_API_KEY = apiKey;
 
-        const result: FetchResponse<typeof slotId> = {
+        const slotId = 'slot-id';
+        const content: FetchResponse<any> = {
             content: {
                 _component: 'component',
-                id: 'test',
             },
         };
 
-        jest.mocked(mockFetch).mockResolvedValue(result);
+        jest.mocked(getRequestContext).mockReturnValue(scenario.request);
+        jest.mocked(loadContent).mockResolvedValue(content);
 
-        await expect(fetchContent(slotId, options)).resolves.toEqual(result);
+        await expect(fetchContent<any, any>(slotId, scenario.options)).resolves.toEqual(content.content);
 
-        expect(ContentFetcher).toHaveBeenCalledWith({
-            apiKey: options.apiKey,
-            baseEndpointUrl: options.baseEndpointUrl,
-        });
-
-        expect(mockFetch).toHaveBeenCalledWith(slotId, {
-            timeout: options.timeout,
-        });
-    });
-
-    it('should extract the slot ID and version', async () => {
-        const slotId = 'slot-id';
-        const version = '1';
-        const versionedSlotId = `${slotId}@${version}`;
-
-        const options: FetchOptions = {
-            apiKey: apiKey,
-            timeout: 100,
-        };
-
-        const result: FetchResponse<typeof slotId> = {
-            content: {
-                _component: 'component',
-                id: 'test',
-            },
-        };
-
-        jest.mocked(mockFetch).mockResolvedValue(result);
-
-        await expect(fetchContent(versionedSlotId, options)).resolves.toEqual(result);
-
-        expect(ContentFetcher).toHaveBeenCalledWith({
-            apiKey: options.apiKey,
-        });
-
-        expect(mockFetch).toHaveBeenCalledWith(slotId, {
-            timeout: options.timeout,
-            version: version,
-        });
-    });
-
-    it('should fetch content omitting the latest alias', async () => {
-        const slotId = 'slot-id';
-        const version = 'latest';
-        const versionedSlotId = `${slotId}@${version}`;
-
-        const options: FetchOptions = {
-            apiKey: apiKey,
-            timeout: 100,
-        };
-
-        const result: FetchResponse<typeof slotId> = {
-            content: {
-                _component: 'component',
-                id: 'test',
-            },
-        };
-
-        jest.mocked(mockFetch).mockResolvedValue(result);
-
-        await expect(fetchContent(versionedSlotId, options)).resolves.toEqual(result);
-
-        expect(ContentFetcher).toHaveBeenCalledWith({
-            apiKey: options.apiKey,
-        });
-
-        expect(mockFetch).toHaveBeenCalledWith(slotId, {
-            timeout: options.timeout,
-        });
-    });
-
-    it('should return the fallback value on error', async () => {
-        const slotId = 'slot-id';
-
-        const fallback: SlotContent = {
-            _component: 'component-id',
-            id: 'fallback',
-        };
-
-        const options: FetchOptions = {
-            apiKey: apiKey,
-            timeout: 100,
-            fallback: fallback,
-        };
-
-        jest.mocked(mockFetch).mockRejectedValue(new Error('error'));
-
-        await expect(fetchContent(slotId, options)).resolves.toEqual({
-            content: fallback,
-        });
+        expect(loadContent).toHaveBeenCalledWith(slotId, scenario.resolvedOptions);
     });
 });

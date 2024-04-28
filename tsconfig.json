@@ -8,6 +8,10 @@
       "jest",
       "node"
     ],
+    "paths": {
+        "@/*": ["src/*"]
+    },
+    "baseUrl": ".",
     "moduleResolution": "node",
     "jsx": "react-jsx",
     "declaration": true,
@@ -16,7 +20,6 @@
     "noImplicitThis": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "allowSyntheticDefaultImports": true,
@@ -26,11 +29,11 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
+    "isolatedModules": true
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
   ],
   "exclude": [
     "node_modules",

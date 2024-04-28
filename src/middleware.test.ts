@@ -1,11 +1,13 @@
-import {NextRequest, NextResponse} from 'next/server';
-import {Cookie, Header, QueryParameter} from '@/lib/utils/http';
-import {config, middleware} from './middleware';
+import {NextRequest, NextResponse, NextFetchEvent} from 'next/server';
+import {uuid4} from '@croct/sdk/uuid';
+import parseSetCookies, {Cookie} from 'set-cookie-parser';
+import {Header, QueryParameter} from '@/utils/http';
+import {config, withCroct} from '@/middleware';
 
 jest.mock(
     'next/server',
     () => ({
-        __esModule: true,
+        ...jest.requireActual('next/server'),
         NextResponse: {
             next: jest.fn(),
         },
@@ -13,50 +15,90 @@ jest.mock(
 );
 
 describe('middleware', () => {
-    const RequestMock = jest.fn<NextRequest, []>(
-        () => {
-            const cookies: Record<string, string> = {};
+    const ENV_VARS = {...process.env};
 
-            return {
-                get nextUrl() {
-                    return new URL('https://example.com/');
-                },
-                get ip() {
-                    return undefined;
-                },
-                headers: new Headers(),
-                cookies: {
-                    get: jest.fn(name => {
-                        if (cookies[name] === undefined) {
-                            return null;
-                        }
+    function createRequestMock(): NextRequest {
+        const cookies: Record<string, string> = {};
 
-                        return {
-                            name: name,
-                            value: cookies[name],
-                        };
-                    }),
-                    set: jest.fn((name, value) => {
-                        cookies[name] = value;
-                    }),
-                },
-            } as unknown as NextRequest;
-        },
-    );
+        return {
+            get nextUrl() {
+                return new URL('https://example.com/');
+            },
+            get ip() {
+                return undefined;
+            },
+            headers: new Headers(),
+            cookies: {
+                get: jest.fn(name => {
+                    if (cookies[name] === undefined) {
+                        return null;
+                    }
 
-    const ResponseMock = jest.fn<NextResponse, []>(
-        () => ({
+                    return {
+                        name: name,
+                        value: cookies[name],
+                    };
+                }),
+                set: jest.fn((name, value) => {
+                    cookies[name] = value;
+                }),
+            },
+        } as unknown as NextRequest;
+    }
+
+    function createResponseMock(): NextResponse {
+        return {
+            headers: new Headers(),
             cookies: {
                 set: jest.fn(),
                 delete: jest.fn(),
             },
-        } as unknown as NextResponse),
-    );
+        } as unknown as NextResponse;
+    }
 
-    const nextResponse = jest.spyOn(NextResponse, 'next');
+    const fetchEvent = {} as unknown as NextFetchEvent;
+
+    type EnvVars = {
+        cidDomain?: string,
+        cidCookieName?: string,
+        cidDuration?: string,
+        previewCookieName?: string,
+        previewCookieDuration?: string,
+    };
+
+    function setEnvVars(vars: EnvVars): void {
+        if (vars.cidDomain !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DOMAIN = vars.cidDomain;
+        }
+
+        if (vars.cidCookieName !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_NAME = vars.cidCookieName;
+        }
+
+        if (vars.cidDuration !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION = vars.cidDuration;
+        }
+
+        if (vars.previewCookieName !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME = vars.previewCookieName;
+        }
+
+        if (vars.previewCookieDuration !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_DURATION = vars.previewCookieName;
+        }
+    }
+
+    beforeEach(() => {
+        delete process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DOMAIN;
+        delete process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_NAME;
+        delete process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION;
+        delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME;
+        delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_DURATION;
+    });
 
     afterEach(() => {
         jest.clearAllMocks();
+        process.env = {...ENV_VARS};
     });
 
     const previewToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJodHRwczovL2Nyb2N0LmlvIiwi'
@@ -66,62 +108,111 @@ describe('middleware', () => {
         + 'IjoiRGV2ZWxvcGVycyBhdWRpZW5jZSIsInZhcmlhbnROYW1lIjoiSmF2YVNjcmlwdCBEZXZlbG'
         + '9wZXJzIn19.';
 
-    it('should assign a new client ID if none is present', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-        nextResponse.mockReturnValue(response);
+    type CidScenario = {
+        envVars: EnvVars,
+        cookie: Omit<Cookie, 'value'>,
+    };
 
-        expect(middleware(request)).toBe(response);
+    it.each<[string, CidScenario]>(Object.entries({
+        'no environment variables': {
+            envVars: {},
+            cookie: {
+                name: 'cid',
+                secure: true,
+                path: '/',
+                sameSite: 'Strict',
+                maxAge: 31536000,
+            },
+        },
+        'empty environment variables': {
+            envVars: {
+                cidDomain: '',
+                cidCookieName: '',
+                cidDuration: '',
+            },
+            cookie: {
+                name: 'cid',
+                secure: true,
+                path: '/',
+                sameSite: 'Strict',
+                maxAge: 31536000,
+            },
+        },
+        'custom environment variables': {
+            envVars: {
+                cidDomain: 'croct.com',
+                cidDuration: '60',
+                cidCookieName: 'custom_cid',
+                previewCookieDuration: '30',
+                previewCookieName: 'custom_preview',
+            },
+            cookie: {
+                name: 'custom_cid',
+                secure: true,
+                path: '/',
+                sameSite: 'Strict',
+                maxAge: 60,
+                domain: 'croct.com',
+            },
+        },
+    }))('should assign a new client ID if none is present with %s', async (_, scenario) => {
+        const request = createRequestMock();
+        const response = createResponseMock();
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        expect(forwardedHeaders.get(Header.CLIENT_ID)).toEqual(expect.stringMatching(/^[0-9a-f]{32}$/));
+        setEnvVars(scenario.envVars);
 
-        expect(response.cookies.set).toHaveBeenCalledWith(Cookie.CLIENT_ID, expect.stringMatching(/^[0-9a-f]{32}$/), {
-            httpOnly: true,
-            secure: true,
-            path: '/',
-            sameSite: 'strict',
-            maxAge: expect.any(Number),
-            domain: 'croct.com',
+        await expect(withCroct()(request, fetchEvent)).resolves.toBe(response);
+
+        const clientId = request.headers.get(Header.CLIENT_ID)!;
+
+        expect(clientId).toEqual(expect.stringMatching(UUID_PATTERN));
+
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeSameMembers([
+            {
+                ...scenario.cookie,
+                value: clientId,
+            },
+        ]);
+    });
+
+    it.each<[string, string]>(Object.entries({
+        'not a number': 'invalid',
+        'negative number': '-1',
+    }))('should throw an error if the CID duration is %s', async (_, duration) => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        setEnvVars({
+            cidDuration: duration,
         });
+
+        await expect(withCroct()(request, fetchEvent)).rejects.toThrow(
+            `Environment variable NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION must be a positive integer, got ${duration}`,
+        );
     });
 
-    it('should set the "domain" on the client ID cookie', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should forward the URL through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
 
-        nextResponse.mockReturnValue(response);
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
 
-        expect(middleware(request)).toBe(response);
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(response.cookies.set).toHaveBeenCalledWith(Cookie.CLIENT_ID, expect.stringMatching(/^[0-9a-f]{32}$/), {
-            httpOnly: true,
-            secure: true,
-            path: '/',
-            sameSite: 'strict',
-            maxAge: expect.any(Number),
-            domain: 'croct.com',
-        });
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(request.headers.get(Header.REQUEST_URI)).toEqual(request.nextUrl.toString());
     });
 
-    it('should forward the URL through the request headers', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
-
-        nextResponse.mockReturnValue(response);
-
-        expect(middleware(request)).toBe(response);
-
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
-
-        expect(forwardedHeaders.get(Header.REQUEST_URI)).toEqual(request.nextUrl.toString());
-    });
-
-    it('should forward the URL without the preview token through the request headers', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should forward the URL without the preview token through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
 
         const baseUrl = 'https://example.com/';
         const url = new URL(baseUrl);
@@ -130,77 +221,97 @@ describe('middleware', () => {
 
         jest.spyOn(request, 'nextUrl', 'get').mockReturnValue(url as NextRequest['nextUrl']);
 
-        nextResponse.mockReturnValue(response);
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        expect(middleware(request)).toBe(response);
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(forwardedHeaders.get(Header.REQUEST_URI)).toEqual(baseUrl);
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(request.headers.get(Header.REQUEST_URI)).toEqual(baseUrl);
     });
 
-    it('should extend the client ID cookie', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should extend the client ID cookie', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
 
-        const clientId = '1234567890abcdef1234567890abcdef';
+        const clientId = uuid4();
+        const cookieName = 'custom_cid';
 
-        request.cookies.set(Cookie.CLIENT_ID, clientId);
+        setEnvVars({
+            cidCookieName: cookieName,
+        });
 
-        nextResponse.mockReturnValue(response);
+        request.cookies.set(cookieName, clientId);
 
-        expect(middleware(request)).toBe(response);
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        await expect(withCroct()(request, fetchEvent)).resolves.toBe(response);
 
-        expect(forwardedHeaders.get(Header.CLIENT_ID)).toBe(clientId);
+        expect(request.headers.get(Header.CLIENT_ID)).toBe(clientId);
 
-        expect(response.cookies.set).toHaveBeenCalledWith(
-            Cookie.CLIENT_ID,
-            clientId,
-            expect.objectContaining({
-                maxAge: expect.any(Number),
-            }),
-        );
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeSameMembers([
+            {
+                name: 'custom_cid',
+                maxAge: 31536000,
+                secure: true,
+                path: '/',
+                sameSite: 'Strict',
+                value: clientId,
+            },
+        ]);
     });
 
-    it('should forward the user-agent through the request headers', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should forward the user-agent through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
 
         const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)';
 
         request.headers.set('user-agent', userAgent);
 
-        nextResponse.mockReturnValue(response);
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        expect(middleware(request)).toBe(response);
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(forwardedHeaders.get(Header.USER_AGENT)).toBe(userAgent);
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(request.headers.get(Header.USER_AGENT)).toBe(userAgent);
     });
 
-    it('should forward the client IP through the request headers', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should forward the client IP through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
 
         const ip = '127.0.0.1';
 
         jest.spyOn(request, 'ip', 'get').mockReturnValue(ip);
 
-        nextResponse.mockReturnValue(response);
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        expect(middleware(request)).toBe(response);
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(forwardedHeaders.get(Header.CLIENT_IP)).toBe(ip);
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(request.headers.get(Header.CLIENT_IP)).toBe(ip);
     });
 
-    it('should store preview tokens in cookies and forward them through the request headers', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should store preview tokens in cookies and forward them through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const cookieName = 'custom_preview';
+        const duration = '30';
+
+        setEnvVars({
+            previewCookieName: cookieName,
+            previewCookieDuration: duration,
+        });
 
         const url = new URL('https://example.com/');
 
@@ -210,50 +321,39 @@ describe('middleware', () => {
 
         jest.useFakeTimers({now: 0});
 
-        nextResponse.mockReturnValue(response);
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        expect(middleware(request)).toBe(response);
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(forwardedHeaders.get(Header.PREVIEW_TOKEN)).toEqual(previewToken);
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
 
-        expect(response.cookies.set).toHaveBeenCalledWith(Cookie.PREVIEW_TOKEN, previewToken, {
-            maxAge: 0,
+        expect(request.headers.get(Header.PREVIEW_TOKEN)).toBe(previewToken);
+
+        const cookies = parseSetCookies(response.headers.getSetCookie())
+            .find(({name}) => name === cookieName);
+
+        expect(cookies).toEqual({
+            name: 'custom_preview',
+            sameSite: 'Strict',
             httpOnly: true,
             secure: true,
-            sameSite: 'strict',
+            value: previewToken,
         });
     });
 
-    it('should forward the preview token through the request headers', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should remove the preview token cookie when leaving the preview', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
 
-        request.cookies.set(Cookie.PREVIEW_TOKEN, previewToken);
+        const cookieName = 'custom_preview';
+        const duration = '30';
 
-        nextResponse.mockReturnValue(response);
-
-        jest.useFakeTimers({now: 0});
-
-        expect(middleware(request)).toBe(response);
-
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
-
-        expect(forwardedHeaders.get(Header.PREVIEW_TOKEN)).toEqual(previewToken);
-
-        expect(response.cookies.set).toHaveBeenCalledWith(
-            Cookie.PREVIEW_TOKEN,
-            previewToken,
-            expect.objectContaining({
-                maxAge: expect.any(Number),
-            }),
-        );
-    });
-
-    it('should remove the preview token cookie when leaving the preview', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+        setEnvVars({
+            previewCookieName: cookieName,
+            previewCookieDuration: duration,
+        });
 
         const url = new URL('https://example.com/');
 
@@ -261,20 +361,39 @@ describe('middleware', () => {
 
         jest.spyOn(request, 'nextUrl', 'get').mockReturnValue(url as NextRequest['nextUrl']);
 
-        nextResponse.mockReturnValue(response);
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        expect(middleware(request)).toBe(response);
+        const nextMiddleware = jest.fn().mockReturnValue(response);
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(forwardedHeaders.get(Header.PREVIEW_TOKEN)).toBeNull();
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
 
-        expect(response.cookies.delete).toHaveBeenCalledWith(Cookie.PREVIEW_TOKEN);
+        expect(request.headers.get(Header.PREVIEW_TOKEN)).toBeNull();
+
+        const cookie = parseSetCookies(response.headers.getSetCookie())
+            .find(({name}) => name === cookieName);
+
+        expect(cookie).toEqual({
+            name: cookieName,
+            maxAge: 0,
+            secure: true,
+            httpOnly: true,
+            value: '',
+        });
     });
 
-    it('should ignore expired preview tokens', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should ignore expired preview tokens', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const cookieName = 'custom_preview';
+        const duration = '30';
+
+        setEnvVars({
+            previewCookieName: cookieName,
+            previewCookieDuration: duration,
+        });
 
         const url = new URL('https://example.com/');
 
@@ -282,22 +401,39 @@ describe('middleware', () => {
 
         jest.spyOn(request, 'nextUrl', 'get').mockReturnValue(url as NextRequest['nextUrl']);
 
-        nextResponse.mockReturnValue(response);
-
         jest.useFakeTimers({now: Number.MAX_SAFE_INTEGER});
 
-        expect(middleware(request)).toBe(response);
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        const nextMiddleware = jest.fn().mockReturnValue(response);
 
-        expect(forwardedHeaders.get(Header.PREVIEW_TOKEN)).toBeNull();
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(response.cookies.delete).toHaveBeenCalledWith(Cookie.PREVIEW_TOKEN);
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        const cookie = parseSetCookies(response.headers.getSetCookie())
+            .find(({name}) => name === cookieName);
+
+        expect(cookie).toEqual({
+            name: cookieName,
+            maxAge: 0,
+            secure: true,
+            httpOnly: true,
+            value: '',
+        });
     });
 
-    it('should ignore invalid preview tokens', () => {
-        const request = new RequestMock();
-        const response = new ResponseMock();
+    it('should ignore invalid preview tokens', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const cookieName = 'custom_preview';
+        const duration = '30';
+
+        setEnvVars({
+            previewCookieName: cookieName,
+            previewCookieDuration: duration,
+        });
 
         const url = new URL('https://example.com/');
 
@@ -305,29 +441,45 @@ describe('middleware', () => {
 
         jest.spyOn(request, 'nextUrl', 'get').mockReturnValue(url as NextRequest['nextUrl']);
 
-        nextResponse.mockReturnValue(response);
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        expect(middleware(request)).toBe(response);
+        const nextMiddleware = jest.fn().mockReturnValue(response);
 
-        const forwardedHeaders = nextResponse.mock.calls[0][0]?.request?.headers as Headers;
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(forwardedHeaders.get(Header.PREVIEW_TOKEN)).toBeNull();
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
 
-        expect(response.cookies.delete).toHaveBeenCalledWith(Cookie.PREVIEW_TOKEN);
+        expect(request.headers.get(Header.PREVIEW_TOKEN)).toBeNull();
+
+        const cookie = parseSetCookies(response.headers.getSetCookie())
+            .find(({name}) => name === cookieName);
+
+        expect(cookie).toEqual({
+            name: cookieName,
+            maxAge: 0,
+            secure: true,
+            httpOnly: true,
+            value: '',
+        });
     });
 
     it.each<string>([
-        'api/foo',
-        '_next/image?bar=quz',
+        'foo',
+        'foo/bar',
+        'foo/bar/baz',
+        'foo/bar/baz/qux',
     ])('should intercept requests to "%s"', url => {
-        expect(new RegExp(config.matcher).test(url)).toBe(true);
+        expect(config.matcher).toHaveLength(1);
+        expect(new RegExp(config.matcher[0]).test(url)).toBe(true);
     });
 
     it.each<string>([
-        'foo/image.png',
-        'foo/image.jpg',
-        'foo/bar/icon.svg',
+        '/api',
+        '/_next/static',
+        '/_next/image',
+        '/favicon.ico',
     ])('should not intercept requests to "%s"', url => {
-        expect(new RegExp(config.matcher).test(url)).toBe(false);
+        expect(config.matcher).toHaveLength(1);
+        expect(new RegExp(config.matcher[0]).test(url)).toBe(false);
     });
 });

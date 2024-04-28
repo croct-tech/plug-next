@@ -1,48 +1,40 @@
-import {
-    ContentFetcher,
-    DynamicContentOptions as BaseDynamicOptions,
-    StaticContentOptions as BaseStaticOptions,
-} from '@croct/sdk/contentFetcher';
-import {JsonObject} from '@croct/plug/sdk/json';
-import {FetchResponse} from '@croct/plug/plug';
-import {SlotContent, VersionedSlotId} from '@croct/plug/slot';
+import 'server-only';
 
-type ServerSideOptions<T extends JsonObject> = {
-    apiKey: string,
-    baseEndpointUrl?: string,
-    fallback?: T,
-};
+import {DynamicContentOptions, fetchContent as loadContent} from '@croct/plug-react/api';
+import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
+import {headers} from 'next/headers';
+import {getApiKey} from '@/utils/apiKey';
+import {getRequestContext} from '@/utils/request';
 
-export type DynamicContentOptions<T extends JsonObject = JsonObject> =
-    Omit<BaseDynamicOptions, 'version'> & ServerSideOptions<T>;
-
-export type StaticContentOptions<T extends JsonObject = JsonObject> =
-    Omit<BaseStaticOptions, 'version'> & ServerSideOptions<T>;
-
-export type FetchOptions<T extends JsonObject = SlotContent> = DynamicContentOptions<T> | StaticContentOptions<T>;
+export type FetchOptions<T extends JsonObject = JsonObject> = Omit<DynamicContentOptions<T>, 'apiKey'>;
 
 export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     slotId: I,
-    options?: FetchOptions<SlotContent<I, C>>,
-): Promise<Omit<FetchResponse<I, C>, 'payload'>> {
-    const {apiKey, fallback, baseEndpointUrl, ...fetchOptions} = options ?? {};
-    const [id, version = 'latest'] = slotId.split('@') as [I, `${number}` | 'latest' | undefined];
+    options: FetchOptions<SlotContent<I, C>> = {},
+): Promise<SlotContent<I, C>> {
+    const request = getRequestContext(headers());
+    const promise = loadContent<I, C>(slotId, {
+        apiKey: getApiKey(),
+        clientIp: request.clientIp ?? '127.0.0.1',
+        ...(request.previewToken !== undefined && {previewToken: request.previewToken}),
+        ...(request.clientId !== undefined && {clientId: request.clientId}),
+        ...(request.clientAgent !== undefined && {clientAgent: request.clientAgent}),
+        ...(request.uri !== undefined
+            ? {
+                context: {
+                    page: {
+                        url: request.uri,
+                        ...(request.referrer !== null ? {referrer: request.referrer} : {}),
+                    },
+                },
+            }
+            : {}
+        ),
+        extra: {
+            cache: 'no-store',
+        },
+        ...options,
+    });
 
-    const promise = (new ContentFetcher({apiKey: apiKey, baseEndpointUrl: baseEndpointUrl}))
-        .fetch<SlotContent<I, C>>(
-            id,
-            version === 'latest'
-                ? fetchOptions
-                : {...fetchOptions, version: version},
-        );
-
-    if (fallback !== undefined) {
-        return promise.catch(
-            () => ({
-                content: fallback,
-            }),
-        );
-    }
-
-    return promise;
+    return promise.then(({content}) => content);
 }
