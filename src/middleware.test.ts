@@ -1,7 +1,7 @@
 import {NextRequest, NextResponse, NextFetchEvent} from 'next/server';
 import {uuid4} from '@croct/sdk/uuid';
 import parseSetCookies, {Cookie} from 'set-cookie-parser';
-import {Header, QueryParameter} from '@/utils/http';
+import {Header, QueryParameter} from '@/config/http';
 import {config, withCroct} from '@/middleware';
 
 jest.mock(
@@ -170,6 +170,12 @@ describe('middleware', () => {
         const clientId = request.headers.get(Header.CLIENT_ID)!;
 
         expect(clientId).toEqual(expect.stringMatching(UUID_PATTERN));
+
+        expect(NextResponse.next).toHaveBeenCalledWith({
+            request: {
+                headers: new Headers(request.headers),
+            },
+        });
 
         expect(parseSetCookies(response.headers.getSetCookie())).toIncludeSameMembers([
             {
@@ -464,10 +470,10 @@ describe('middleware', () => {
     });
 
     it.each<string>([
-        'foo',
-        'foo/bar',
-        'foo/bar/baz',
-        'foo/bar/baz/qux',
+        '/foo',
+        '/foo/bar',
+        '/foo/bar/baz',
+        '/foo/bar/baz/qux',
     ])('should intercept requests to "%s"', url => {
         expect(config.matcher).toHaveLength(1);
         expect(new RegExp(config.matcher[0]).test(url)).toBe(true);

@@ -5,7 +5,7 @@ import {
     CroctProvider as ReactCroctProvider,
 } from '@croct/plug-react/CroctProvider';
 import {FunctionComponent} from 'react';
-import {getCidCookieOptions} from '@/utils/cookie';
+import {getCidCookieOptions} from '@/config/cookie';
 
 export type CroctProviderProps = Omit<ReactCroctProviderProps, 'appId'>
     & Partial<Pick<ReactCroctProviderProps, 'appId'>>;

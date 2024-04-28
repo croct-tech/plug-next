@@ -5,7 +5,7 @@
 import {render} from '@testing-library/react';
 import {CroctProvider as UnderlyingProvider} from '@croct/plug-react/CroctProvider';
 import {CroctProvider} from './CroctProvider';
-import {getCidCookieOptions} from '@/utils/cookie';
+import {getCidCookieOptions} from '@/config/cookie';
 
 jest.mock(
     '@croct/plug-react/CroctProvider',

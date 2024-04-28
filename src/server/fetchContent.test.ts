@@ -1,7 +1,7 @@
 import {fetchContent as loadContent, FetchOptions as ResolvedFetchOptions} from '@croct/plug-react/api';
 import {FetchResponse} from '@croct/plug/plug';
 import {fetchContent, FetchOptions} from './fetchContent';
-import {getRequestContext, RequestContext} from '@/utils/request';
+import {getDefaultFetchTimeout, getRequestContext, RequestContext} from '@/config/request';
 
 jest.mock(
     'server-only',
@@ -28,10 +28,11 @@ jest.mock(
 );
 
 jest.mock(
-    '@/utils/request',
+    '@/config/request',
     () => ({
         __esModule: true,
         getRequestContext: jest.fn(),
+        getDefaultFetchTimeout: jest.fn(() => undefined),
     }),
 );
 
@@ -76,7 +77,7 @@ describe('fetchContent', () => {
                 },
             },
         },
-        'with full contex': {
+        'with full context': {
             request: request,
             options: {},
             resolvedOptions: {
@@ -150,5 +151,72 @@ describe('fetchContent', () => {
         await expect(fetchContent<any, any>(slotId, scenario.options)).resolves.toEqual(content.content);
 
         expect(loadContent).toHaveBeenCalledWith(slotId, scenario.resolvedOptions);
+    });
+
+    it('should use the default fetch timeout', async () => {
+        process.env.CROCT_API_KEY = apiKey;
+
+        const defaultTimeout = 1000;
+        const slotId = 'slot-id';
+        const content: FetchResponse<any> = {
+            content: {
+                _component: 'component',
+            },
+        };
+
+        jest.mocked(getRequestContext).mockReturnValue({
+            clientId: request.clientId,
+        });
+
+        jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
+
+        jest.mocked(loadContent).mockResolvedValue(content);
+
+        await fetchContent<any, any>(slotId);
+
+        expect(loadContent).toHaveBeenCalledWith(slotId, {
+            apiKey: apiKey,
+            clientId: request.clientId,
+            clientIp: '127.0.0.1',
+            timeout: defaultTimeout,
+            extra: {
+                cache: 'no-store',
+            },
+        });
+    });
+
+    it('should override the default fetch timeout', async () => {
+        process.env.CROCT_API_KEY = apiKey;
+
+        const defaultTimeout = 1000;
+        const timeout = 2000;
+        const slotId = 'slot-id';
+        const content: FetchResponse<any> = {
+            content: {
+                _component: 'component',
+            },
+        };
+
+        jest.mocked(getRequestContext).mockReturnValue({
+            clientId: request.clientId,
+        });
+
+        jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
+
+        jest.mocked(loadContent).mockResolvedValue(content);
+
+        await fetchContent<any, any>(slotId, {
+            timeout: timeout,
+        });
+
+        expect(loadContent).toHaveBeenCalledWith(slotId, {
+            apiKey: apiKey,
+            clientId: request.clientId,
+            clientIp: '127.0.0.1',
+            timeout: timeout,
+            extra: {
+                cache: 'no-store',
+            },
+        });
     });
 });

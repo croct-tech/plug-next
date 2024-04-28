@@ -1,6 +1,6 @@
 import {evaluate as executeQuery, EvaluationOptions as ResolvedEvaluationOptions} from '@croct/plug-react/api';
 import {cql, evaluate, EvaluationOptions} from './evaluate';
-import {getRequestContext, RequestContext} from '@/utils/request';
+import {getDefaultFetchTimeout, getRequestContext, RequestContext} from '@/config/request';
 
 jest.mock(
     'server-only',
@@ -27,10 +27,11 @@ jest.mock(
 );
 
 jest.mock(
-    '@/utils/request',
+    '@/config/request',
     () => ({
         __esModule: true,
         getRequestContext: jest.fn(),
+        getDefaultFetchTimeout: jest.fn(() => undefined),
     }),
 );
 
@@ -141,6 +142,65 @@ describe('evaluation', () => {
             await expect(evaluate(query, scenario.options)).resolves.toBe(result);
 
             expect(executeQuery).toHaveBeenCalledWith(query, scenario.resolvedOptions);
+        });
+
+        it('should use the default fetch timeout', async () => {
+            const query = 'true';
+            const result = true;
+            const defaultTimeout = 1000;
+
+            jest.mocked(getRequestContext).mockReturnValue(request);
+            jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
+            jest.mocked(executeQuery).mockResolvedValue(result);
+
+            await expect(evaluate(query)).resolves.toBe(result);
+
+            expect(executeQuery).toHaveBeenCalledWith(query, {
+                apiKey: apiKey,
+                clientId: request.clientId,
+                clientIp: request.clientIp,
+                clientAgent: request.clientAgent,
+                timeout: defaultTimeout,
+                context: {
+                    page: {
+                        url: request.uri,
+                        referrer: request.referrer,
+                    },
+                },
+                extra: {
+                    cache: 'no-store',
+                },
+            });
+        });
+
+        it('should override the default fetch timeout', async () => {
+            const query = 'true';
+            const result = true;
+            const defaultTimeout = 1000;
+            const timeout = 2000;
+
+            jest.mocked(getRequestContext).mockReturnValue(request);
+            jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
+            jest.mocked(executeQuery).mockResolvedValue(result);
+
+            await expect(evaluate(query, {timeout})).resolves.toBe(result);
+
+            expect(executeQuery).toHaveBeenCalledWith(query, {
+                apiKey: apiKey,
+                clientId: request.clientId,
+                clientIp: request.clientIp,
+                clientAgent: request.clientAgent,
+                timeout: timeout,
+                context: {
+                    page: {
+                        url: request.uri,
+                        referrer: request.referrer,
+                    },
+                },
+                extra: {
+                    cache: 'no-store',
+                },
+            });
         });
     });
 

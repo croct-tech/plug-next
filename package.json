@@ -1,11 +1,11 @@
 {
-  "name": "@croct/plug-nextjs",
+  "name": "@croct/plug-next",
   "version": "0.0.0-dev",
-  "description": "React components and hooks to plug your Next.js applications into Croct.",
+  "description": "React components and utilities to plug your Next.js applications into Croct.",
   "author": {
     "name": "Croct",
     "url": "https://croct.com",
-    "email": "lib+plug-nextjs@croct.com"
+    "email": "lib+plug-next@croct.com"
   },
   "keywords": [
     "croct",
@@ -17,7 +17,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/croct-tech/plug-nextjs.git"
+    "url": "git+https://github.com/croct-tech/plug-next.git"
   },
   "main": "./build/index.js",
   "types": "./build/index.d.ts",

@@ -1,4 +1,4 @@
-import {getApiKey} from '@/utils/apiKey';
+import {getApiKey} from '@/config/apiKey';
 
 describe('apiKey', () => {
     beforeEach(() => {

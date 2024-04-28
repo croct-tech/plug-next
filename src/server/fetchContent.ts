@@ -3,10 +3,10 @@ import 'server-only';
 import {DynamicContentOptions, fetchContent as loadContent} from '@croct/plug-react/api';
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import {headers} from 'next/headers';
-import {getApiKey} from '@/utils/apiKey';
-import {getRequestContext} from '@/utils/request';
+import {getApiKey} from '@/config/apiKey';
+import {getDefaultFetchTimeout, getRequestContext} from '@/config/request';
 
-export type FetchOptions<T extends JsonObject = JsonObject> = Omit<DynamicContentOptions<T>, 'apiKey'>;
+export type FetchOptions<T extends JsonObject = JsonObject> = Omit<DynamicContentOptions<T>, 'apiKey' | 'appId'>;
 
 export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     slotId: I,
@@ -30,6 +30,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
             }
             : {}
         ),
+        timeout: getDefaultFetchTimeout(),
         extra: {
             cache: 'no-store',
         },

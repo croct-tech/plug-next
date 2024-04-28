@@ -1,4 +1,4 @@
-import {getCidCookieOptions, getPreviewCookieOptions} from '@/utils/cookie';
+import {getCidCookieOptions, getPreviewCookieOptions} from '@/config/cookie';
 
 describe('getCidCookieOptions', () => {
     beforeEach(() => {
@@ -46,11 +46,21 @@ describe('getCidCookieOptions', () => {
         });
     });
 
-    it('should throw an error if duration is not a positive integer', () => {
+    it('should throw an error if duration is a valid integer', () => {
         process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION = 'invalid';
 
         expect(() => getCidCookieOptions()).toThrow(
-            'Environment variable NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION must be a positive integer, got invalid',
+            'The cookie duration must be a positive integer, got \'invalid\'. '
+            + 'Please check the NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION environment variable.',
+        );
+    });
+
+    it('should throw an error if duration is not an positive integer', () => {
+        process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION = '-1';
+
+        expect(() => getCidCookieOptions()).toThrow(
+            'The cookie duration must be a positive integer, got \'-1\'. '
+            + 'Please check the NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION environment variable.',
         );
     });
 });

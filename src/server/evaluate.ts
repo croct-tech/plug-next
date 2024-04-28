@@ -3,10 +3,10 @@ import 'server-only';
 import {evaluate as executeQuery, EvaluationOptions as BaseOptions} from '@croct/plug-react/api';
 import type {JsonValue} from '@croct/plug-react';
 import {headers} from 'next/headers';
-import {getApiKey} from '@/utils/apiKey';
-import {getRequestContext} from '@/utils/request';
+import {getApiKey} from '@/config/apiKey';
+import {getDefaultFetchTimeout, getRequestContext} from '@/config/request';
 
-export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey'>;
+export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey' | 'appId'>;
 
 export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
     const request = getRequestContext(headers());
@@ -17,6 +17,7 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
         ...(request.previewToken !== undefined && {previewToken: request.previewToken}),
         ...(request.clientId !== undefined && {clientId: request.clientId}),
         ...(request.clientAgent !== undefined && {clientAgent: request.clientAgent}),
+        timeout: getDefaultFetchTimeout(),
         extra: {
             cache: 'no-store',
         },

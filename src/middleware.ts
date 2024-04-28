@@ -2,8 +2,8 @@ import {NextRequest, NextMiddleware, NextResponse} from 'next/server';
 import cookie from 'cookie';
 import {v4 as uuidv4} from 'uuid';
 import {Response} from 'next/dist/compiled/@edge-runtime/primitives';
-import {Header, QueryParameter} from '@/utils/http';
-import {CookieOptions, getCidCookieOptions, getPreviewCookieOptions} from '@/utils/cookie';
+import {Header, QueryParameter} from '@/config/http';
+import {CookieOptions, getCidCookieOptions, getPreviewCookieOptions} from '@/config/cookie';
 
 // Ignore static assets
 export const config = {
@@ -26,27 +26,29 @@ export function withCroct(next?: NextMiddleware): NextMiddleware {
         const cidCookie = getCidCookieOptions();
         const previewCookie = getPreviewCookieOptions();
 
-        request.headers.set(Header.REQUEST_URI, getCurrentUrl(request));
+        const headers = new Headers(request.headers);
+
+        headers.set(Header.REQUEST_URI, getCurrentUrl(request));
 
         const clientId = getClientId(request, cidCookie.name);
 
         if (clientId !== null) {
-            request.headers.set(Header.CLIENT_ID, clientId);
+            headers.set(Header.CLIENT_ID, clientId);
         }
 
         if (request.ip !== undefined) {
-            request.headers.set(Header.CLIENT_IP, request.ip);
+            headers.set(Header.CLIENT_IP, request.ip);
         }
 
         const previewToken = getPreviewToken(request, previewCookie.name);
 
         if (previewToken !== null && previewToken !== 'exit') {
-            request.headers.set(Header.PREVIEW_TOKEN, previewToken);
+            headers.set(Header.PREVIEW_TOKEN, previewToken);
         }
 
         const response = (await next?.(request, event)) ?? NextResponse.next({
             request: {
-                headers: new Headers(request.headers),
+                headers: headers,
             },
         });
 

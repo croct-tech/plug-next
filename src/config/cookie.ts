@@ -9,20 +9,20 @@ export type CookieOptions = {
 };
 
 export function getCidCookieOptions(): CookieOptions {
-    const duration = resolveValue(process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION, '31536000');
+    const duration = normalizeValue(process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION, '31536000');
     const parsedDuration = Number.parseInt(duration, 10);
 
     if (Number.isNaN(parsedDuration) || parsedDuration <= 0) {
         throw new Error(
-            'Environment variable NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION must be '
-            + `a positive integer, got ${duration}`,
+            `The cookie duration must be a positive integer, got '${duration}'. `
+            + 'Please check the NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION environment variable.',
         );
     }
 
-    const domain = resolveValue(process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DOMAIN, '');
+    const domain = normalizeValue(process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DOMAIN, '');
 
     return {
-        name: resolveValue(process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_NAME, 'cid'),
+        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_NAME, 'cid'),
         maxAge: parsedDuration,
         secure: true,
         path: '/',
@@ -33,14 +33,14 @@ export function getCidCookieOptions(): CookieOptions {
 
 export function getPreviewCookieOptions(): CookieOptions {
     return {
-        name: resolveValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME, 'preview-token'),
+        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME, 'preview-token'),
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
     };
 }
 
-function resolveValue(value: string|undefined, defaultValue: string): string {
+function normalizeValue(value: string|undefined, defaultValue: string): string {
     if (value === undefined || value === '') {
         return defaultValue;
     }
