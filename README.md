@@ -59,7 +59,7 @@ If your application does not already have middleware, create a new one in the ro
 export {config, middleware} from '@croct/plug-next/middleware';
 ```
 
-#### Existing middleware
+##### Existing middleware
 
 Suppose you already have a middleware in your application like the following example:
 
