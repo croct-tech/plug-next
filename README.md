@@ -178,9 +178,7 @@ import {fetchContent} from '@croct/plug-next/server';
 export default async function Page(): Promise<ReactElement> {
     const content = await fetchContent('slot-id');
 
-    return (
-        // Render the content
-    );
+    return (/* Render the content */);
 }
 ```
 
@@ -201,7 +199,7 @@ import {ReactElement} from 'react';
 import {evaluate} from '@croct/plug-next/server';
 
 export default async function Example(): Promise<ReactElement> {
-    const isNewYork: boolean = await evaluate("location's city is 'New York'');
+    const isNewYork: boolean = await evaluate("location's city is 'New York'");
 
     return (/* Render the content */);
 }
