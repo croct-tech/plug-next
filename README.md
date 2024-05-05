@@ -11,8 +11,8 @@
 <p align="center">
     <a href="https://www.npmjs.com/package/@croct/plug-next"><img alt="Version" src="https://img.shields.io/npm/v/@croct/plug-next"/></a>
     <a href="https://github.com/croct-tech/plug-next/actions?query=workflow%3AValidations"><img alt="Build" src="https://github.com/croct-tech/plug-next/workflows/Validations/badge.svg"/></a>
-    <a href="https://codeclimate.com/repos/60665953e0608a018c001907/maintainability"><img alt="Maintainability" src="https://api.codeclimate.com/v1/badges/24f7d3e788ed2c66f2ab/maintainability"/></a>
-    <a href="https://codeclimate.com/repos/60665953e0608a018c001907/test_coverage"><img alt="Coverage" src="https://api.codeclimate.com/v1/badges/24f7d3e788ed2c66f2ab/test_coverage"/></a>
+    <a href="https://codeclimate.com/repos/6637c6af2b3e4d40361ecb09/maintainability"><img alt="Maintainability" src="https://api.codeclimate.com/v1/badges/0552346701398a87ef7b/maintainability"/></a>
+    <a href="https://codeclimate.com/repos/6637c6af2b3e4d40361ecb09/test_coverage"><img alt="Coverage" src="https://api.codeclimate.com/v1/badges/0552346701398a87ef7b/test_coverage"/></a>
     <br />
     <br />
     <a href="https://github.com/croct-tech/plug-next/releases">📦 Releases</a>
