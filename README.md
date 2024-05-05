@@ -221,8 +221,12 @@ export default async function Example(): Promise<ReactElement> {
 
 ### Identifying users
 
-The SDK provides two ways to identify users that you can choose depending 
-on how you manage user sessions in your application.
+By default, all users are considered anonymous. However, if your application has logged-in areas, 
+you may want to link the Croct user profile with your application's user ID. This allows you 
+to personalize the user experience consistently across devices and sessions.
+
+The SDK offers two options for identifying users, which you can choose depending on how you 
+manage user sessions in your application.
 
 #### Automatic identification
 
