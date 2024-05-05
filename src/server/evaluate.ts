@@ -2,19 +2,21 @@ import 'server-only';
 
 import {evaluate as executeQuery, EvaluationOptions as BaseOptions} from '@croct/plug-react/api';
 import type {JsonValue} from '@croct/plug-react';
-import {headers} from 'next/headers';
-import {getApiKey} from '@/config/apiKey';
-import {getDefaultFetchTimeout, getRequestContext} from '@/config/request';
+import {cookies, headers} from 'next/headers';
+import {getApiKey} from '@/config/security';
+import {getRequestContext} from '@/config/context';
+import {getDefaultFetchTimeout} from '@/config/timeout';
 
 export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey' | 'appId'>;
 
 export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
-    const request = getRequestContext(headers());
+    const request = getRequestContext(headers(), cookies());
 
     return executeQuery<T>(query, {
-        apiKey: getApiKey(),
+        apiKey: getApiKey().getIdentifier(),
         clientIp: request.clientIp ?? '127.0.0.1',
         ...(request.previewToken !== undefined && {previewToken: request.previewToken}),
+        ...(request.userToken !== undefined && {userToken: request.userToken}),
         ...(request.clientId !== undefined && {clientId: request.clientId}),
         ...(request.clientAgent !== undefined && {clientAgent: request.clientAgent}),
         timeout: getDefaultFetchTimeout(),

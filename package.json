@@ -40,6 +40,7 @@
     "@croct/plug": "file:/Users/marcospassos/WebstormProjects/plug-js/build/croct-plug-0.0.0-dev.tgz",
     "@croct/plug-react": "file:/Users/marcospassos/WebstormProjects/plug-react/build/croct-plug-react-0.0.0-dev.tgz",
     "cookie": "^0.5.0",
+    "set-cookie-parser": "^2.6.0",
     "server-only": "^0.0.1",
     "uuid": "^9.0.1"
   },
@@ -68,7 +69,6 @@
     "jest-extended": "^4.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "set-cookie-parser": "^2.6.0",
     "ts-node": "^10.8.1",
     "tsc-alias": "^1.8.8",
     "typescript": "^5.4.5",

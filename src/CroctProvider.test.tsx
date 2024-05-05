@@ -3,9 +3,12 @@
  */
 
 import {render} from '@testing-library/react';
-import {CroctProvider as UnderlyingProvider} from '@croct/plug-react/CroctProvider';
-import {CroctProvider} from './CroctProvider';
-import {getCidCookieOptions} from '@/config/cookie';
+import {
+    CroctProvider as UnderlyingProvider,
+    CroctProviderProps as ResolvedProviderProps,
+} from '@croct/plug-react/CroctProvider';
+import {CroctProvider, CroctProviderProps} from './CroctProvider';
+import {getClientIdCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 
 jest.mock(
     '@croct/plug-react/CroctProvider',
@@ -23,6 +26,7 @@ describe('<CroctProvider />', () => {
         jest.clearAllMocks();
 
         delete process.env.NEXT_PUBLIC_CROCT_APP_ID;
+        delete process.env.NEXT_PUBLIC_CROCT_DEBUG;
     });
 
     afterEach(() => {
@@ -35,26 +39,90 @@ describe('<CroctProvider />', () => {
 
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '';
 
-        expect(
-            () => render(<CroctProvider />),
-        ).toThrow(
-            'The Croct application ID is missing. '
-            + 'Did you forget to define the NEXT_PUBLIC_CROCT_APP_ID environment variable?',
+        expect(() => render(<CroctProvider />)).toThrow(
+            'Croct\'s application ID is missing. '
+            + 'Did you forget to set the NEXT_PUBLIC_CROCT_APP_ID environment variable?',
         );
     });
 
-    it('should detect the environment configuration', () => {
+    it('should not require environment variables to be set', () => {
+        render(<CroctProvider appId="00000000-0000-0000-0000-000000000000" />);
+
+        expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
+            {
+                appId: '00000000-0000-0000-0000-000000000000',
+                debug: false,
+                disableCidMirroring: true,
+                cookie: {
+                    clientId: getClientIdCookieOptions(),
+                    userToken: getUserTokenCookieOptions(),
+                },
+            },
+            expect.anything(),
+        );
+    });
+
+    it('should allow overriding the environment configuration', () => {
+        process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+        process.env.NEXT_PUBLIC_CROCT_DEBUG = 'true';
+
+        const config = {
+            appId: '11111111-1111-1111-1111-111111111111',
+            debug: false,
+            enableCidMirroring: true,
+            cookie: {
+                clientId: {
+                    name: 'custom-client-id',
+                    domain: 'example.com',
+                    secure: true,
+                    sameSite: 'strict',
+                },
+                userToken: {
+                    name: 'custom-user-token',
+                    domain: 'example.com',
+                    secure: true,
+                    sameSite: 'strict',
+                },
+            },
+        } satisfies CroctProviderProps;
+
+        render(<CroctProvider {...config} />);
+
+        expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
+            {
+                appId: config.appId,
+                debug: config.debug,
+                disableCidMirroring: !config.enableCidMirroring,
+                cookie: config.cookie,
+            },
+            expect.anything(),
+        );
+    });
+
+    it('should detect the application ID from the environment', () => {
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
 
-        render(<CroctProvider debug />);
+        render(<CroctProvider />);
 
-        expect(UnderlyingProvider).toHaveBeenCalledWith(
-            {
-                debug: true,
+        expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
+            expect.objectContaining({
                 appId: process.env.NEXT_PUBLIC_CROCT_APP_ID,
-                cidCookie: getCidCookieOptions(),
-            },
-            {},
+            }),
+            expect.anything(),
+        );
+    });
+
+    it('should detect the debug mode from the environment', () => {
+        process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+        process.env.NEXT_PUBLIC_CROCT_DEBUG = 'true';
+
+        render(<CroctProvider />);
+
+        expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
+            expect.objectContaining({
+                debug: true,
+            }),
+            expect.anything(),
         );
     });
 });

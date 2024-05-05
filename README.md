@@ -47,6 +47,19 @@ npm install @croct/plug-next
 Before you can start using the library, you need to  set the environment variables and configure a middleware to 
 populate the request scope with the client context.
 
+#### Environment variables
+
+Create or update the `.env.local` file in the root of your project and add the following environment variables:
+
+```dotenv
+CROCT_API_KEY=<API_KEY>
+NEXT_PUBLIC_CROCT_APP_ID=<APP_ID>
+```
+
+You can find your API Key and Application ID in the Croct dashboard under Workspaces > Applications > Setup.
+The API key is a secret key that should be kept confidential and never exposed to the client side. To create a new API key
+go to Workspaces > Applications > API Keys.
+
 #### Middleware
 
 The configuration of the middleware slightly varies depending on whether you already have a middleware in your application or not.
@@ -129,19 +142,6 @@ export {config} from '@croct/plug-next/middleware';
 export const middleware = withCroct(logHeaders);
 ```
 
-#### Environment variables
-
-Create or update the `.env.local` file in the root of your project and add the following environment variables:
-
-```dotenv
-CROCT_API_KEY=<API_KEY>
-NEXT_PUBLIC_CROCT_APP_ID=<APP_ID>
-```
-
-You can find your API Key and Application ID in the Croct dashboard under Workspaces > Applications > Setup.
-The API key is a secret key that should be kept confidential and never exposed to the client side. To create a new API key
-go to Workspaces > Applications > API Keys.
-
 ### Initialization
 
 You connect Croct to your application with the `<CroctProvider />` component. The `<CroctProvider />` uses a regular React's
@@ -217,6 +217,139 @@ export default async function Example(): Promise<ReactElement> {
 
     return (/* Render the content */);
 }
+```
+
+### Identifying users
+
+The SDK provides two ways to identify users that you can choose depending 
+on how you manage user sessions in your application.
+
+#### Automatic identification
+
+The first method is to provide the middleware with a function that resolves the user ID from the request,
+so that it can automatically handle the entire process of identifying and anonymizing users for you.
+
+This is the recommended approach if you have a secure way to determine the user ID from the request, 
+such as a session token or JWT token.
+
+Here is an example of how to implement this function:
+
+```ts
+import {NextRequest, NextResponse} from 'next/server';
+
+function resolveUserId(request: NextRequest): string|null {
+    const userToken = request.cookies.get('my-session-token');
+    
+    if (userToken === null) {
+       return null;
+    }
+    
+    try {
+        // The logic to extract the user ID from the token and validate it.   
+        return userId;
+    } catch {
+        return null;
+    }
+}
+
+export {config} from '@croct/plug-next/middleware';
+
+export const middleware = withCroct({userIdResolver: resolveUserId});
+```
+
+#### Manual identification
+
+If you do not have a way to automatically identify users, you can use the `identify` and `anonymize` functions
+to manually handle the identification and anonymization of users.
+
+The example above shows an example using [server actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations):
+
+```tsx
+// app/actions.ts
+'use server';
+
+import {anonymize, identify} from '@croct/plug-next/server';
+
+export async function identifyUser(userId: string): Promise<void> {
+    await identify(userId);
+}
+
+export async function anonymizeUser(): Promise<void> {
+    await anonymize();
+}
+```
+
+Now, suppose you have the following form in your application:
+
+```tsx
+'use client';
+
+import React, {FunctionComponent} from 'react';
+import {login} from '@/app/services';
+import {identifyUser} from '@/app/actions';
+
+export const LoginForm: FunctionComponent = () => {
+    const onSubmit = async (form: FormData): Promise<void> => {
+        const username = form.get('username');
+        const password = form.get('password');
+        
+        await login(username, password)
+    };
+
+    return (
+        <form action={onSubmit}>
+            <input type="text" name="username" />
+            <input type="password" name="password" />
+            <button type="submit">Login</button>
+        </form>
+    );
+};
+```
+
+After successful login, you can identify the user as follows:
+
+```tsx
+'use client';
+
+import React, {FunctionComponent} from 'react';
+import {login} from '@/app/services';
+import {identifyUser} from '@/app/actions';
+
+export const LoginForm: FunctionComponent = () => {
+    const onSubmit = async (form: FormData): Promise<void> => {
+        const username = form.get('username');
+        const password = form.get('password');
+
+        if (await login(username, password)) {
+            // Identify the user after successfully logging in
+            await identifyUser(username);
+        }
+    };
+
+    return (
+        <form action={onSubmit}>
+            <input type="text" name="username" />
+            <input type="password" name="password" />
+            <button type="submit">Login</button>
+        </form>
+    );
+};
+```
+
+You can anonymize the user after logging out in the same way:
+
+```tsx
+'use client';
+
+import React, {FunctionComponent} from 'react';
+import Link from 'next/link';
+import {anonymizeUser} from '@/app/actions';
+
+export const LogoutLink: FunctionComponent = () => (
+    <Link href="/login" onClick={() => anonymizeUser()}>
+        Anonymize
+    </Link>
+);
 ```
 
 ## Support

@@ -1,9 +1,16 @@
 import {NextRequest, NextMiddleware, NextResponse} from 'next/server';
 import cookie from 'cookie';
-import {v4 as uuidv4} from 'uuid';
-import {Response} from 'next/dist/compiled/@edge-runtime/primitives';
+import {v4 as uuid, v4 as uuidv4} from 'uuid';
+import {Token} from '@croct/sdk/token';
 import {Header, QueryParameter} from '@/config/http';
-import {CookieOptions, getCidCookieOptions, getPreviewCookieOptions} from '@/config/cookie';
+import {
+    CookieOptions,
+    getClientIdCookieOptions,
+    getPreviewCookieOptions,
+    getUserTokenCookieOptions,
+} from '@/config/cookie';
+import {getAppId} from '@/config/appId';
+import {getAuthenticationKey, isTokenAuthenticationEnabled} from './config/security';
 
 // Ignore static assets
 export const config = {
@@ -19,22 +26,51 @@ export const config = {
     ],
 };
 
+const CLIENT_ID_PATTERN = /^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{32})$/;
+
 export const middleware = withCroct();
 
-export function withCroct(next?: NextMiddleware): NextMiddleware {
+export type UserIdResolver = (request: NextRequest) => Promise<string|null>|string|null;
+
+export type CroctMiddlewareOptions = {
+    next?: NextMiddleware,
+    userIdResolver?: UserIdResolver,
+};
+
+type CroctMiddlewareParams =
+      [NextMiddleware]
+    | [NextMiddleware, UserIdResolver]
+    | [CroctMiddlewareOptions]
+    | [];
+
+export function withCroct(): NextMiddleware;
+export function withCroct(next: NextMiddleware): NextMiddleware;
+export function withCroct(next: NextMiddleware, userIdResolver: UserIdResolver): NextMiddleware;
+export function withCroct(props: CroctMiddlewareOptions): NextMiddleware;
+
+export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
+    if (args.length === 0) {
+        return withCroct({});
+    }
+
+    if (typeof args[0] === 'function') {
+        return withCroct({next: args[0], userIdResolver: args[1]});
+    }
+
+    const {next, userIdResolver} = args[0];
+
     return async (request, event) => {
-        const cidCookie = getCidCookieOptions();
+        const clientIdCookie = getClientIdCookieOptions();
         const previewCookie = getPreviewCookieOptions();
+        const userCookie = getUserTokenCookieOptions();
+        const {headers} = request;
 
-        const headers = new Headers(request.headers);
+        const userToken = await getUserToken(request, userCookie.name, userIdResolver);
+        const clientId = getClientId(request, clientIdCookie.name);
 
+        headers.set(Header.USER_TOKEN, userToken.toString());
         headers.set(Header.REQUEST_URI, getCurrentUrl(request));
-
-        const clientId = getClientId(request, cidCookie.name);
-
-        if (clientId !== null) {
-            headers.set(Header.CLIENT_ID, clientId);
-        }
+        headers.set(Header.CLIENT_ID, clientId);
 
         if (request.ip !== undefined) {
             headers.set(Header.CLIENT_IP, request.ip);
@@ -48,7 +84,7 @@ export function withCroct(next?: NextMiddleware): NextMiddleware {
 
         const response = (await next?.(request, event)) ?? NextResponse.next({
             request: {
-                headers: headers,
+                headers: new Headers(headers),
             },
         });
 
@@ -58,7 +94,8 @@ export function withCroct(next?: NextMiddleware): NextMiddleware {
             setCookie(response, previewToken, previewCookie);
         }
 
-        setCookie(response, clientId, cidCookie);
+        setCookie(response, userToken.toString(), userCookie);
+        setCookie(response, clientId, clientIdCookie);
 
         return response;
     };
@@ -72,28 +109,54 @@ function getCurrentUrl(request: NextRequest): string {
     return url.toString();
 }
 
-function generateCid(): string {
+function generateClientId(): string {
     return uuidv4();
 }
 
 function getClientId(request: NextRequest, cookieName: string): string {
-    return request.cookies.get(cookieName)?.value
-        ?? generateCid();
+    const clientId = request.cookies.get(cookieName)?.value ?? null;
+
+    if (clientId === null || !CLIENT_ID_PATTERN.test(clientId)) {
+        return generateClientId();
+    }
+
+    return clientId;
 }
 
-function isPreviewTokenValid(token: unknown): token is string {
-    if (typeof token !== 'string' || token === 'exit') {
-        return false;
+async function getUserToken(
+    request: NextRequest,
+    cookieName: string,
+    userIdResolver?: UserIdResolver,
+): Promise<Token> {
+    const userCookie = request.cookies.get(cookieName);
+    let token: Token|null = null;
+
+    if (userCookie !== undefined) {
+        try {
+            token = Token.parse(userCookie.value);
+        } catch {
+            // Ignore invalid tokens
+        }
     }
 
-    try {
-        const jwt = JSON.parse(atob(token.split('.')[1]).toString());
-        const now = Math.floor(Date.now() / 1000);
+    const userId = userIdResolver !== undefined ? await userIdResolver(request) : undefined;
+    const authenticated = isTokenAuthenticationEnabled();
 
-        return Number.isInteger(jwt.exp) && jwt.exp > now;
-    } catch {
-        return false;
+    if (
+        token === null
+        || (authenticated && !token.isSigned())
+        || !token.isValidNow()
+        || (userId !== undefined && (userId === null ? !token.isAnonymous() : !token.isSubject(userId)))
+        || (token.isSigned() && !await token.matchesKeyId(getAuthenticationKey()))
+    ) {
+        return authenticated
+            ? Token.issue(getAppId(), userId)
+                .withTokenId(uuid())
+                .signedWith(getAuthenticationKey())
+            : Token.issue(getAppId(), userId);
     }
+
+    return token;
 }
 
 function getPreviewToken(request: NextRequest, cookieName: string): string | null {
@@ -110,6 +173,22 @@ function getPreviewToken(request: NextRequest, cookieName: string): string | nul
     }
 
     return 'exit';
+}
+
+function isPreviewTokenValid(token: unknown): token is string {
+    if (typeof token !== 'string' || token === 'exit') {
+        return false;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]).toString());
+
+        return Number.isInteger(payload.exp) && payload.exp > now;
+    } catch {
+        return false;
+    }
 }
 
 function unsetCookie(response: Response, name: string): void {

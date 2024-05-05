@@ -1,6 +1,9 @@
 import {evaluate as executeQuery, EvaluationOptions as ResolvedEvaluationOptions} from '@croct/plug-react/api';
+import {ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {cql, evaluate, EvaluationOptions} from './evaluate';
-import {getDefaultFetchTimeout, getRequestContext, RequestContext} from '@/config/request';
+import {getRequestContext, RequestContext} from '@/config/context';
+import {getDefaultFetchTimeout} from '@/config/timeout';
+import {getApiKey} from '@/config/security';
 
 jest.mock(
     'server-only',
@@ -14,6 +17,7 @@ jest.mock(
     () => ({
         __esModule: true,
         headers: jest.fn(() => new Headers()),
+        cookies: jest.fn(() => ({})),
     }),
 );
 
@@ -27,16 +31,34 @@ jest.mock(
 );
 
 jest.mock(
-    '@/config/request',
+    '@/config/security',
     () => ({
         __esModule: true,
+        ...jest.requireActual('@/config/security'),
+        getApiKey: jest.fn(() => MockApiKey.of('00000000-0000-0000-0000-000000000000')),
+    }),
+);
+
+jest.mock(
+    '@/config/context',
+    () => ({
+        __esModule: true,
+        ...jest.requireActual('@/config/context'),
         getRequestContext: jest.fn(),
-        getDefaultFetchTimeout: jest.fn(() => undefined),
+    }),
+);
+
+jest.mock(
+    '@/config/timeout',
+    () => ({
+        __esModule: true,
+        ...jest.requireActual('@/config/timeout'),
+        getDefaultFetchTimeout: jest.fn(),
     }),
 );
 
 describe('evaluation', () => {
-    const apiKey = '00000000-0000-0000-0000-000000000000';
+    const apiKey = getApiKey().getIdentifier();
     const request = {
         clientId: '12345678-1234-1234-1234-123456789012',
         uri: 'http://example.com',
@@ -45,15 +67,13 @@ describe('evaluation', () => {
         clientAgent: 'user-agent',
     } satisfies RequestContext;
 
-    beforeEach(() => {
-        process.env.CROCT_API_KEY = apiKey;
+    afterEach(() => {
+        jest.mocked(getRequestContext).mockReset();
+        jest.mocked(executeQuery).mockReset();
+        jest.mocked(getDefaultFetchTimeout).mockReset();
     });
 
     describe('evaluate', () => {
-        afterEach(() => {
-            jest.clearAllMocks();
-        });
-
         type EvaluateScenario = {
             request: RequestContext,
             options: EvaluationOptions<any>,
@@ -183,7 +203,7 @@ describe('evaluation', () => {
             jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
-            await expect(evaluate(query, {timeout})).resolves.toBe(result);
+            await expect(evaluate(query, {timeout: timeout})).resolves.toBe(result);
 
             expect(executeQuery).toHaveBeenCalledWith(query, {
                 apiKey: apiKey,

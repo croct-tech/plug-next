@@ -1,7 +1,10 @@
 import {fetchContent as loadContent, FetchOptions as ResolvedFetchOptions} from '@croct/plug-react/api';
 import {FetchResponse} from '@croct/plug/plug';
+import {ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {fetchContent, FetchOptions} from './fetchContent';
-import {getDefaultFetchTimeout, getRequestContext, RequestContext} from '@/config/request';
+import {getRequestContext, RequestContext} from '@/config/context';
+import {getDefaultFetchTimeout} from '@/config/timeout';
+import {getApiKey} from '@/config/security';
 
 jest.mock(
     'server-only',
@@ -15,6 +18,7 @@ jest.mock(
     () => ({
         __esModule: true,
         headers: jest.fn(() => new Headers()),
+        cookies: jest.fn(() => ({})),
     }),
 );
 
@@ -28,16 +32,34 @@ jest.mock(
 );
 
 jest.mock(
-    '@/config/request',
+    '@/config/security',
     () => ({
         __esModule: true,
+        ...jest.requireActual('@/config/security'),
+        getApiKey: jest.fn(() => MockApiKey.of('00000000-0000-0000-0000-000000000000')),
+    }),
+);
+
+jest.mock(
+    '@/config/context',
+    () => ({
+        __esModule: true,
+        ...jest.requireActual('@/config/context'),
         getRequestContext: jest.fn(),
-        getDefaultFetchTimeout: jest.fn(() => undefined),
+    }),
+);
+
+jest.mock(
+    '@/config/timeout',
+    () => ({
+        __esModule: true,
+        ...jest.requireActual('@/config/timeout'),
+        getDefaultFetchTimeout: jest.fn(),
     }),
 );
 
 describe('fetchContent', () => {
-    const apiKey = '00000000-0000-0000-0000-000000000000';
+    const apiKey = getApiKey().getIdentifier();
     const request = {
         clientId: '12345678-1234-1234-1234-123456789012',
         uri: 'http://example.com',
@@ -53,7 +75,9 @@ describe('fetchContent', () => {
     } satisfies RequestContext;
 
     afterEach(() => {
-        jest.clearAllMocks();
+        jest.mocked(getRequestContext).mockReset();
+        jest.mocked(getDefaultFetchTimeout).mockReset();
+        jest.mocked(loadContent).mockReset();
     });
 
     type FetchScenario = {
@@ -136,8 +160,6 @@ describe('fetchContent', () => {
             },
         },
     }))('should forward the call %s to the fetchContent function', async (_, scenario) => {
-        process.env.CROCT_API_KEY = apiKey;
-
         const slotId = 'slot-id';
         const content: FetchResponse<any> = {
             content: {
@@ -154,8 +176,6 @@ describe('fetchContent', () => {
     });
 
     it('should use the default fetch timeout', async () => {
-        process.env.CROCT_API_KEY = apiKey;
-
         const defaultTimeout = 1000;
         const slotId = 'slot-id';
         const content: FetchResponse<any> = {
@@ -186,8 +206,6 @@ describe('fetchContent', () => {
     });
 
     it('should override the default fetch timeout', async () => {
-        process.env.CROCT_API_KEY = apiKey;
-
         const defaultTimeout = 1000;
         const timeout = 2000;
         const slotId = 'slot-id';

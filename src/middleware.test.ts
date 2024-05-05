@@ -1,8 +1,18 @@
-import {NextRequest, NextResponse, NextFetchEvent} from 'next/server';
-import {uuid4} from '@croct/sdk/uuid';
+import {NextRequest, NextResponse, NextFetchEvent, NextMiddleware} from 'next/server';
 import parseSetCookies, {Cookie} from 'set-cookie-parser';
+import {Token} from '@croct/sdk/token';
+import {v4 as uuid} from 'uuid';
+import {ApiKey} from '@croct/sdk/apiKey';
 import {Header, QueryParameter} from '@/config/http';
 import {config, withCroct} from '@/middleware';
+import {getAppId} from '@/config/appId';
+
+jest.mock(
+    'uuid',
+    () => ({
+        v4: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
+    }),
+);
 
 jest.mock(
     'next/server',
@@ -31,7 +41,7 @@ describe('middleware', () => {
             cookies: {
                 get: jest.fn(name => {
                     if (cookies[name] === undefined) {
-                        return null;
+                        return undefined;
                     }
 
                     return {
@@ -59,24 +69,42 @@ describe('middleware', () => {
     const fetchEvent = {} as unknown as NextFetchEvent;
 
     type EnvVars = {
-        cidDomain?: string,
+        cidCookieDomain?: string,
         cidCookieName?: string,
-        cidDuration?: string,
+        cidCookieDuration?: string,
+        userTokenCookieDomain?: string,
+        userTokenCookieName?: string,
+        userTokenCookieDuration?: string,
         previewCookieName?: string,
         previewCookieDuration?: string,
+        apiKey?: string,
+        appId?: string,
+        enableTokenAuthentication?: boolean,
     };
 
     function setEnvVars(vars: EnvVars): void {
-        if (vars.cidDomain !== undefined) {
-            process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DOMAIN = vars.cidDomain;
+        if (vars.cidCookieDomain !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DOMAIN = vars.cidCookieDomain;
         }
 
         if (vars.cidCookieName !== undefined) {
-            process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_NAME = vars.cidCookieName;
+            process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_NAME = vars.cidCookieName;
         }
 
-        if (vars.cidDuration !== undefined) {
-            process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION = vars.cidDuration;
+        if (vars.cidCookieDuration !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION = vars.cidCookieDuration;
+        }
+
+        if (vars.userTokenCookieDomain !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DOMAIN = vars.userTokenCookieDomain;
+        }
+
+        if (vars.userTokenCookieName !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_NAME = vars.userTokenCookieName;
+        }
+
+        if (vars.userTokenCookieDuration !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION = vars.userTokenCookieDuration;
         }
 
         if (vars.previewCookieName !== undefined) {
@@ -86,19 +114,38 @@ describe('middleware', () => {
         if (vars.previewCookieDuration !== undefined) {
             process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_DURATION = vars.previewCookieName;
         }
+
+        if (vars.apiKey !== undefined) {
+            process.env.CROCT_API_KEY = vars.apiKey;
+        }
+
+        if (vars.appId !== undefined) {
+            process.env.NEXT_PUBLIC_CROCT_APP_ID = vars.appId;
+        }
+
+        if (vars.enableTokenAuthentication !== undefined) {
+            process.env.CROCT_AUTHENTICATED_TOKENS = vars.enableTokenAuthentication ? 'true' : 'false';
+        }
     }
 
     beforeEach(() => {
-        delete process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DOMAIN;
-        delete process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_NAME;
-        delete process.env.NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION;
+        delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DOMAIN;
+        delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_NAME;
+        delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION;
+        delete process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DOMAIN;
+        delete process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_NAME;
+        delete process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION;
         delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME;
         delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_DURATION;
+        delete process.env.CROCT_API_KEY;
+        delete process.env.CROCT_ENABLE_TOKEN_AUTHENTICATION;
+
+        process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
         process.env = {...ENV_VARS};
+        jest.useRealTimers();
     });
 
     const previewToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJodHRwczovL2Nyb2N0LmlvIiwi'
@@ -108,18 +155,18 @@ describe('middleware', () => {
         + 'IjoiRGV2ZWxvcGVycyBhdWRpZW5jZSIsInZhcmlhbnROYW1lIjoiSmF2YVNjcmlwdCBEZXZlbG'
         + '9wZXJzIn19.';
 
-    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-    type CidScenario = {
+    type ClientIdEnvScenario = {
         envVars: EnvVars,
         cookie: Omit<Cookie, 'value'>,
     };
 
-    it.each<[string, CidScenario]>(Object.entries({
+    it.each<[string, ClientIdEnvScenario]>(Object.entries({
         'no environment variables': {
             envVars: {},
             cookie: {
-                name: 'cid',
+                name: 'ct.cid',
                 secure: true,
                 path: '/',
                 sameSite: 'Strict',
@@ -128,12 +175,12 @@ describe('middleware', () => {
         },
         'empty environment variables': {
             envVars: {
-                cidDomain: '',
+                cidCookieDomain: '',
                 cidCookieName: '',
-                cidDuration: '',
+                cidCookieDuration: '',
             },
             cookie: {
-                name: 'cid',
+                name: 'ct.cid',
                 secure: true,
                 path: '/',
                 sameSite: 'Strict',
@@ -142,8 +189,8 @@ describe('middleware', () => {
         },
         'custom environment variables': {
             envVars: {
-                cidDomain: 'croct.com',
-                cidDuration: '60',
+                cidCookieDomain: 'croct.com',
+                cidCookieDuration: '60',
                 cidCookieName: 'custom_cid',
                 previewCookieDuration: '30',
                 previewCookieName: 'custom_preview',
@@ -167,22 +214,14 @@ describe('middleware', () => {
 
         await expect(withCroct()(request, fetchEvent)).resolves.toBe(response);
 
-        const clientId = request.headers.get(Header.CLIENT_ID)!;
+        const clientId = request.headers.get(Header.CLIENT_ID);
 
         expect(clientId).toEqual(expect.stringMatching(UUID_PATTERN));
 
-        expect(NextResponse.next).toHaveBeenCalledWith({
-            request: {
-                headers: new Headers(request.headers),
-            },
-        });
-
-        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeSameMembers([
-            {
-                ...scenario.cookie,
-                value: clientId,
-            },
-        ]);
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
+            ...scenario.cookie,
+            value: clientId,
+        }]);
     });
 
     it.each<[string, string]>(Object.entries({
@@ -195,11 +234,12 @@ describe('middleware', () => {
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
         setEnvVars({
-            cidDuration: duration,
+            cidCookieDuration: duration,
         });
 
         await expect(withCroct()(request, fetchEvent)).rejects.toThrow(
-            `Environment variable NEXT_PUBLIC_CROCT_CID_COOKIE_DURATION must be a positive integer, got ${duration}`,
+            `Croct's cookie duration must be a positive integer, got '${duration}'.`
+            + ' Please check the NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION environment variable.',
         );
     });
 
@@ -238,11 +278,13 @@ describe('middleware', () => {
         expect(request.headers.get(Header.REQUEST_URI)).toEqual(baseUrl);
     });
 
-    it('should extend the client ID cookie', async () => {
+    it.each([
+        ['00000000-0000-0000-0000-000000000001'],
+        ['00000000000000000000000000000002'],
+    ])('should extend the client ID %s', async clientId => {
         const request = createRequestMock();
         const response = createResponseMock();
 
-        const clientId = uuid4();
         const cookieName = 'custom_cid';
 
         setEnvVars({
@@ -257,16 +299,44 @@ describe('middleware', () => {
 
         expect(request.headers.get(Header.CLIENT_ID)).toBe(clientId);
 
-        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeSameMembers([
-            {
-                name: 'custom_cid',
-                maxAge: 31536000,
-                secure: true,
-                path: '/',
-                sameSite: 'Strict',
-                value: clientId,
-            },
-        ]);
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
+            name: 'custom_cid',
+            maxAge: 31536000,
+            secure: true,
+            path: '/',
+            sameSite: 'Strict',
+            value: clientId,
+        }]);
+    });
+
+    it('should generate a new client ID if the value is invalid', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const cookieName = 'custom_cid';
+
+        setEnvVars({
+            cidCookieName: cookieName,
+        });
+
+        request.cookies.set(cookieName, 'invalid');
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        await expect(withCroct()(request, fetchEvent)).resolves.toBe(response);
+
+        const clientId = request.headers.get(Header.CLIENT_ID);
+
+        expect(clientId).toEqual(expect.stringMatching(UUID_PATTERN));
+
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
+            name: 'custom_cid',
+            maxAge: 31536000,
+            secure: true,
+            path: '/',
+            sameSite: 'Strict',
+            value: clientId,
+        }]);
     });
 
     it('should forward the user-agent through the request headers', async () => {
@@ -337,19 +407,16 @@ describe('middleware', () => {
 
         expect(request.headers.get(Header.PREVIEW_TOKEN)).toBe(previewToken);
 
-        const cookies = parseSetCookies(response.headers.getSetCookie())
-            .find(({name}) => name === cookieName);
-
-        expect(cookies).toEqual({
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             name: 'custom_preview',
             sameSite: 'Strict',
             httpOnly: true,
             secure: true,
             value: previewToken,
-        });
+        }]);
     });
 
-    it('should remove the preview token cookie when leaving the preview', async () => {
+    it('should delete the preview token cookie when leaving the preview', async () => {
         const request = createRequestMock();
         const response = createResponseMock();
 
@@ -369,7 +436,7 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockReturnValue(response);
+        const nextMiddleware: NextMiddleware = jest.fn().mockReturnValue(response);
 
         await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
@@ -377,16 +444,13 @@ describe('middleware', () => {
 
         expect(request.headers.get(Header.PREVIEW_TOKEN)).toBeNull();
 
-        const cookie = parseSetCookies(response.headers.getSetCookie())
-            .find(({name}) => name === cookieName);
-
-        expect(cookie).toEqual({
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             name: cookieName,
             maxAge: 0,
             secure: true,
             httpOnly: true,
             value: '',
-        });
+        }]);
     });
 
     it('should ignore expired preview tokens', async () => {
@@ -411,22 +475,19 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockReturnValue(response);
+        const nextMiddleware: NextMiddleware = jest.fn().mockReturnValue(response);
 
         await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
         expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
 
-        const cookie = parseSetCookies(response.headers.getSetCookie())
-            .find(({name}) => name === cookieName);
-
-        expect(cookie).toEqual({
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             name: cookieName,
             maxAge: 0,
             secure: true,
             httpOnly: true,
             value: '',
-        });
+        }]);
     });
 
     it('should ignore invalid preview tokens', async () => {
@@ -449,7 +510,7 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockReturnValue(response);
+        const nextMiddleware: NextMiddleware = jest.fn().mockReturnValue(response);
 
         await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
@@ -457,16 +518,502 @@ describe('middleware', () => {
 
         expect(request.headers.get(Header.PREVIEW_TOKEN)).toBeNull();
 
-        const cookie = parseSetCookies(response.headers.getSetCookie())
-            .find(({name}) => name === cookieName);
-
-        expect(cookie).toEqual({
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             name: cookieName,
             maxAge: 0,
             secure: true,
             httpOnly: true,
             value: '',
+        }]);
+    });
+
+    type UserTokenEnvScenario = {
+        envVars: EnvVars,
+        cookie: Omit<Cookie, 'value'>,
+    };
+
+    it.each<[string, UserTokenEnvScenario]>(Object.entries({
+        'no environment variables': {
+            envVars: {},
+            cookie: {
+                name: 'ct.utk',
+                secure: true,
+                path: '/',
+                sameSite: 'Strict',
+                maxAge: 604800,
+            },
+        },
+        'empty environment variables': {
+            envVars: {
+                userTokenCookieDomain: '',
+                userTokenCookieName: '',
+                userTokenCookieDuration: '',
+            },
+            cookie: {
+                name: 'ct.utk',
+                secure: true,
+                path: '/',
+                sameSite: 'Strict',
+                maxAge: 604800,
+            },
+        },
+        'custom environment variables': {
+            envVars: {
+                userTokenCookieDomain: 'croct.com',
+                userTokenCookieDuration: '60',
+                userTokenCookieName: 'custom_ut',
+            },
+            cookie: {
+                name: 'custom_ut',
+                secure: true,
+                path: '/',
+                sameSite: 'Strict',
+                maxAge: 60,
+                domain: 'croct.com',
+            },
+        },
+    }))('should assign a new user token if none is present with %s', async (_, scenario) => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        setEnvVars(scenario.envVars);
+
+        await expect(withCroct()(request, fetchEvent)).resolves.toBe(response);
+
+        const userToken = request.headers.get(Header.USER_TOKEN);
+
+        expect(userToken).not.toBeNull();
+
+        const parsedToken = Token.parse(userToken!);
+
+        expect(parsedToken.isAnonymous()).toBe(true);
+        expect(parsedToken.getApplicationId()).toBe(getAppId());
+        expect(parsedToken.getTokenId()).toBeNull();
+
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
+            ...scenario.cookie,
+            value: userToken,
+        }]);
+    });
+
+    it('should assign a new user token the current one is invalid', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const cookieName = 'custom_ut';
+
+        setEnvVars({
+            userTokenCookieName: cookieName,
         });
+
+        request.cookies.set(cookieName, 'invalid');
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        await expect(withCroct()(request, fetchEvent)).resolves.toBe(response);
+
+        const userToken = request.headers.get(Header.USER_TOKEN);
+
+        expect(userToken).not.toBeNull();
+        expect(userToken).not.toBe('invalid');
+
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
+            name: cookieName,
+            maxAge: 604800,
+            secure: true,
+            path: '/',
+            sameSite: 'Strict',
+            value: userToken,
+        }]);
+    });
+
+    type UserTokenChangeScenario = {
+        now?: number,
+        authentication: boolean,
+        currentApiKey?: string,
+        currentUserId?: string|null,
+        requestToken?: {
+            apiKey?: string,
+            userId: string|null,
+            expiration: number,
+            issueTime: number,
+            signed: boolean,
+        },
+        expectTokenChange: boolean,
+        expectSignedToken: boolean,
+    };
+
+    it.each<[string, UserTokenChangeScenario]>(
+        Object.entries<UserTokenChangeScenario>({
+            'a new authenticated token if no token is present in the request': {
+                authentication: true,
+                currentUserId: null,
+                expectTokenChange: true,
+                expectSignedToken: true,
+            },
+            'a new unauthenticated token if no token is present in the request': {
+                authentication: false,
+                currentUserId: null,
+                expectTokenChange: true,
+                expectSignedToken: false,
+            },
+            'a new authenticated token if the request token is expired': {
+                now: 1714881454,
+                authentication: true,
+                currentUserId: null,
+                requestToken: {
+                    expiration: 1714881454 - 1000,
+                    issueTime: 1714881454 - 2000,
+                    userId: null,
+                    signed: false,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+            },
+            'a new unauthenticated token if the request token is expired': {
+                now: 1714881454,
+                authentication: false,
+                currentUserId: null,
+                requestToken: {
+                    expiration: 1714881454 - 1000,
+                    issueTime: 1714881454 - 2000,
+                    userId: null,
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: false,
+            },
+            'a new authenticated token if the request token is in the future': {
+                now: 1714881454,
+                authentication: true,
+                currentUserId: null,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454 + 1000,
+                    userId: null,
+                    signed: false,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+            },
+            'a new unauthenticated token if the request token is in the future': {
+                now: 1714881454,
+                authentication: false,
+                currentUserId: null,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454 + 1000,
+                    userId: null,
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: false,
+            },
+            'a new authenticated token if the request token is anonymous and there is a logged user': {
+                now: 1714881454,
+                authentication: true,
+                currentUserId: '00000000-0000-0000-0000-000000000002',
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: null,
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+            },
+            'a new unauthenticated token if the request token is anonymous and there is a logged user': {
+                now: 1714881454,
+                authentication: false,
+                currentUserId: '00000000-0000-0000-0000-000000000002',
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: null,
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: false,
+            },
+            'a new authenticated token if the request token is identified and the user is anonymous': {
+                now: 1714881454,
+                currentUserId: null,
+                authentication: true,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+            },
+            'a new unauthenticated token if the request token is identified and the user is anonymous': {
+                now: 1714881454,
+                authentication: false,
+                currentUserId: null,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: false,
+                },
+                expectTokenChange: true,
+                expectSignedToken: false,
+            },
+            'a new authenticated token if the user changes': {
+                now: 1714881454,
+                authentication: true,
+                currentUserId: '00000000-0000-0000-0000-000000000002',
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+            },
+            'a new unauthenticated token if the user changes': {
+                now: 1714881454,
+                authentication: false,
+                currentUserId: '00000000-0000-0000-0000-000000000002',
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: false,
+                },
+                expectTokenChange: true,
+                expectSignedToken: false,
+            },
+            'a new authenticated token if the API key changes': {
+                now: 1714881454,
+                authentication: true,
+                currentApiKey: '00000000-0000-0000-0000-000000000002',
+                currentUserId: '00000000-0000-0000-0000-000000000001',
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    apiKey: '00000000-0000-0000-0000-000000000001',
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+            },
+            'a new authenticated token if the token is unauthenticated': {
+                now: 1714881454,
+                authentication: true,
+                currentUserId: '00000000-0000-0000-0000-000000000001',
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: false,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+            },
+            'the same authenticated token the user is the same': {
+                now: 1714881454,
+                currentUserId: '00000000-0000-0000-0000-000000000001',
+                authentication: true,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: true,
+                },
+                expectTokenChange: false,
+                expectSignedToken: true,
+            },
+            'the same unauthenticated token the user is the same': {
+                now: 1714881454,
+                currentUserId: '00000000-0000-0000-0000-000000000001',
+                authentication: false,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: false,
+                },
+                expectTokenChange: false,
+                expectSignedToken: false,
+            },
+            'the same authenticated anonymous token if the user is anonymous': {
+                now: 1714881454,
+                currentUserId: null,
+                authentication: true,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: null,
+                    signed: true,
+                },
+                expectTokenChange: false,
+                expectSignedToken: true,
+            },
+            'the same unauthenticated anonymous token if the user is anonymous': {
+                now: 1714881454,
+                currentUserId: null,
+                authentication: false,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: null,
+                    signed: false,
+                },
+                expectTokenChange: false,
+                expectSignedToken: false,
+            },
+            'the same authenticated token even if token authentication is disabled': {
+                now: 1714881454,
+                currentUserId: '00000000-0000-0000-0000-000000000001',
+                authentication: false,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: true,
+                },
+                expectTokenChange: false,
+                expectSignedToken: true,
+            },
+            'the same authenticated token if the user is identified and no user ID resolver is provided': {
+                now: 1714881454,
+                authentication: true,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: true,
+                },
+                expectTokenChange: false,
+                expectSignedToken: true,
+            },
+            'the same unauthenticated token if the user is identified and no user ID resolver is provided': {
+                now: 1714881454,
+                authentication: false,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    signed: false,
+                },
+                expectTokenChange: false,
+                expectSignedToken: false,
+            },
+            'the same authenticated token if the user is anonymous and no user ID resolver is provided': {
+                now: 1714881454,
+                authentication: true,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: null,
+                    signed: true,
+                },
+                expectTokenChange: false,
+                expectSignedToken: true,
+            },
+            'the same unauthenticated token if the user is anonymous and no user ID resolver is provided': {
+                now: 1714881454,
+                authentication: false,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: null,
+                    signed: false,
+                },
+                expectTokenChange: false,
+                expectSignedToken: false,
+            },
+        }),
+    )('should assign %s', async (_, scenario) => {
+        jest.useFakeTimers({now: scenario.now !== undefined ? scenario.now * 1000 : undefined});
+
+        const keyIdentifier = scenario.requestToken?.apiKey ?? '00000000-0000-0000-0000-000000000001';
+        const privateKey = '302e020100300506032b6570042204206d0e45033d54'
+            + 'aa3231fcef9f0eaa1ff559a68884dbcc8931181b312f90513261';
+
+        const oldApiKey = ApiKey.of(keyIdentifier, privateKey);
+        const currentApiKey = scenario.currentApiKey !== undefined
+            ? ApiKey.of(scenario.currentApiKey, privateKey)
+            : oldApiKey;
+
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const cookieName = 'custom_ut';
+
+        setEnvVars({
+            appId: '00000000-0000-0000-0000-000000000001',
+            apiKey: currentApiKey.export(),
+            userTokenCookieName: cookieName,
+            enableTokenAuthentication: scenario.authentication,
+        });
+
+        const {requestToken} = scenario;
+
+        const oldUnsignedToken = requestToken !== undefined
+            ? Token.of(
+                {
+                    typ: 'JWT',
+                    appId: getAppId(),
+                    alg: 'none',
+                },
+                {
+                    exp: requestToken.expiration,
+                    iat: requestToken.issueTime,
+                    iss: 'test',
+                    aud: 'test',
+                    ...(requestToken?.userId !== null ? {sub: requestToken.userId} : {}),
+                },
+            )
+            : null;
+
+        const oldUserToken = oldUnsignedToken !== null && requestToken?.signed === true
+            ? await oldUnsignedToken.withTokenId(uuid())
+                .signedWith(oldApiKey)
+            : oldUnsignedToken;
+
+        if (oldUserToken !== null) {
+            request.cookies.set(cookieName, oldUserToken.toString());
+        }
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const userIdResolver = scenario.currentUserId !== undefined
+            ? jest.fn().mockResolvedValue(scenario.currentUserId)
+            : undefined;
+
+        await expect(withCroct({userIdResolver: userIdResolver})(request, fetchEvent)).resolves.toBe(response);
+
+        const newUserToken = request.headers.get(Header.USER_TOKEN);
+
+        expect(newUserToken).not.toBeNull();
+
+        expect(newUserToken !== oldUserToken?.toString()).toBe(scenario.expectTokenChange);
+
+        const parsedToken = Token.parse(newUserToken!);
+
+        expect(parsedToken.isSigned()).toBe(scenario.expectSignedToken);
+        expect(parsedToken.getSubject()).toBe(
+            scenario.currentUserId !== undefined
+                ? scenario.currentUserId
+                : requestToken?.userId ?? null,
+        );
+
+        expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
+            name: cookieName,
+            maxAge: 604800,
+            secure: true,
+            path: '/',
+            sameSite: 'Strict',
+            value: newUserToken,
+        }]);
     });
 
     it.each<string>([

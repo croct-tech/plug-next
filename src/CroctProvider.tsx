@@ -5,25 +5,26 @@ import {
     CroctProvider as ReactCroctProvider,
 } from '@croct/plug-react/CroctProvider';
 import {FunctionComponent} from 'react';
-import {getCidCookieOptions} from '@/config/cookie';
+import {getClientIdCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
+import {getAppId} from '@/config/appId';
 
-export type CroctProviderProps = Omit<ReactCroctProviderProps, 'appId'>
-    & Partial<Pick<ReactCroctProviderProps, 'appId'>>;
+export type CroctProviderProps = Omit<ReactCroctProviderProps, 'appId' | 'disableCidMirroring'>
+    & Partial<Pick<ReactCroctProviderProps, 'appId'>> & {
+    enableCidMirroring?: boolean,
+};
 
 export const CroctProvider: FunctionComponent<CroctProviderProps> = props => {
-    const {appId = (process.env.NEXT_PUBLIC_CROCT_APP_ID ?? ''), ...rest} = props;
-
-    if (appId === '') {
-        throw new Error(
-            'The Croct application ID is missing. '
-            + 'Did you forget to define the NEXT_PUBLIC_CROCT_APP_ID environment variable?',
-        );
-    }
+    const {appId = getAppId(), enableCidMirroring = false, ...rest} = props;
 
     return (
         <ReactCroctProvider
+            debug={process.env.NEXT_PUBLIC_CROCT_DEBUG === 'true'}
             appId={appId}
-            cidCookie={getCidCookieOptions()}
+            disableCidMirroring={!enableCidMirroring}
+            cookie={{
+                clientId: getClientIdCookieOptions(),
+                userToken: getUserTokenCookieOptions(),
+            }}
             {...rest}
         />
     );
