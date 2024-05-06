@@ -47,7 +47,7 @@ describe('cookie', () => {
             });
         });
 
-        it('should throw an error if the duration is a valid integer', () => {
+        it('should throw an error if the duration is an invalid integer', () => {
             process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION = 'invalid';
 
             expect(() => getClientIdCookieOptions()).toThrow(
@@ -149,7 +149,7 @@ describe('cookie', () => {
             });
         });
 
-        it('should throw an error if the duration is a valid integer', () => {
+        it('should throw an error if the duration is an invalid integer', () => {
             process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION = 'invalid';
 
             expect(() => getUserTokenCookieOptions()).toThrow(

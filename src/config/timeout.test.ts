@@ -6,8 +6,6 @@ describe('getDefaultFetchTimeout', () => {
     });
 
     it('should return undefined when the environment variable is missing', () => {
-        delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT;
-
         expect(getDefaultFetchTimeout()).toBeUndefined();
     });
 

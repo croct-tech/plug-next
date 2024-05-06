@@ -56,9 +56,9 @@ CROCT_API_KEY=<API_KEY>
 NEXT_PUBLIC_CROCT_APP_ID=<APP_ID>
 ```
 
-You can find your API Key and Application ID in the Croct dashboard under Workspaces > Applications > Setup.
+You can find your API Key and Application ID in the Croct dashboard under `Workspaces > Applications > Setup`.
 The API key is a secret key that should be kept confidential and never exposed to the client side. To create a new API key
-go to Workspaces > Applications > API Keys.
+go to `Workspaces > Applications > API Keys`.
 
 #### Middleware
 

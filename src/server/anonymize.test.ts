@@ -82,13 +82,11 @@ describe('anonymize', () => {
     it('should set a unsigned token in the cookie', async () => {
         jest.useFakeTimers({now: Date.now()});
 
-        const userId = 'test';
-
         jest.mocked(isTokenAuthenticationEnabled).mockReturnValue(false);
 
         expect(isTokenAuthenticationEnabled()).toBe(false);
 
-        await expect(identify(userId)).resolves.toBeUndefined();
+        await expect(anonymize()).resolves.toBeUndefined();
 
         const jar = cookies();
 
@@ -99,7 +97,7 @@ describe('anonymize', () => {
             domain: undefined,
             secure: false,
             sameSite: 'lax',
-            value: Token.issue(getAppId(), userId).toString(),
+            value: Token.issue(getAppId()).toString(),
         });
     });
 
