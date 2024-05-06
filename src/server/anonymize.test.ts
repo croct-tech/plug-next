@@ -3,7 +3,7 @@ import {cookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
 import {v4 as uuid} from 'uuid';
 import {getAppId} from '@/config/appId';
-import {getAuthenticationKey, isTokenAuthenticationEnabled} from '@/config/security';
+import {getAuthenticationKey, isUserTokenAuthenticationEnabled} from '@/config/security';
 import {anonymize} from '@/server/anonymize';
 
 jest.mock(
@@ -24,7 +24,7 @@ jest.mock(
             ...jest.requireActual('@/config/security'),
             getApiKey: jest.fn(() => apiKey),
             getAuthenticationKey: jest.fn(() => apiKey),
-            isTokenAuthenticationEnabled: jest.fn(() => false),
+            isUserTokenAuthenticationEnabled: jest.fn(() => false),
         };
     },
 );
@@ -74,16 +74,16 @@ jest.mock(
 describe('anonymize', () => {
     afterEach(() => {
         jest.mocked(cookies().set).mockClear();
-        jest.mocked(isTokenAuthenticationEnabled).mockReset();
+        jest.mocked(isUserTokenAuthenticationEnabled).mockReset();
         jest.useRealTimers();
     });
 
     it('should set a unsigned token in the cookie', async () => {
         jest.useFakeTimers({now: Date.now()});
 
-        jest.mocked(isTokenAuthenticationEnabled).mockReturnValue(false);
+        jest.mocked(isUserTokenAuthenticationEnabled).mockReturnValue(false);
 
-        expect(isTokenAuthenticationEnabled()).toBe(false);
+        expect(isUserTokenAuthenticationEnabled()).toBe(false);
 
         await expect(anonymize()).resolves.toBeUndefined();
 
@@ -111,9 +111,9 @@ describe('anonymize', () => {
             ),
         );
 
-        jest.mocked(isTokenAuthenticationEnabled).mockReturnValue(true);
+        jest.mocked(isUserTokenAuthenticationEnabled).mockReturnValue(true);
 
-        expect(isTokenAuthenticationEnabled()).toBe(true);
+        expect(isUserTokenAuthenticationEnabled()).toBe(true);
 
         await expect(anonymize()).resolves.toBeUndefined();
 

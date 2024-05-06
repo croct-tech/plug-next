@@ -5,7 +5,7 @@ import {
     CroctProvider as ReactCroctProvider,
 } from '@croct/plug-react/CroctProvider';
 import {FunctionComponent} from 'react';
-import {getClientIdCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
+import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 import {getAppId} from '@/config/appId';
 
 export type CroctProviderProps = Omit<ReactCroctProviderProps, 'appId' | 'disableCidMirroring'>
@@ -24,6 +24,7 @@ export const CroctProvider: FunctionComponent<CroctProviderProps> = props => {
             cookie={{
                 clientId: getClientIdCookieOptions(),
                 userToken: getUserTokenCookieOptions(),
+                previewToken: getPreviewCookieOptions(),
             }}
             {...rest}
         />

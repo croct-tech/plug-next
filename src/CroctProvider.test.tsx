@@ -8,7 +8,7 @@ import {
     CroctProviderProps as ResolvedProviderProps,
 } from '@croct/plug-react/CroctProvider';
 import {CroctProvider, CroctProviderProps} from './CroctProvider';
-import {getClientIdCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
+import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 
 jest.mock(
     '@croct/plug-react/CroctProvider',
@@ -56,6 +56,7 @@ describe('<CroctProvider />', () => {
                 cookie: {
                     clientId: getClientIdCookieOptions(),
                     userToken: getUserTokenCookieOptions(),
+                    previewToken: getPreviewCookieOptions(),
                 },
             },
             expect.anything(),

@@ -4,7 +4,7 @@ import {Token} from '@croct/sdk/token';
 import {v4 as uuid} from 'uuid';
 import {identify} from '@/server/identify';
 import {getAppId} from '@/config/appId';
-import {getAuthenticationKey, isTokenAuthenticationEnabled} from '@/config/security';
+import {getAuthenticationKey, isUserTokenAuthenticationEnabled} from '@/config/security';
 
 jest.mock(
     'uuid',
@@ -24,7 +24,7 @@ jest.mock(
             ...jest.requireActual('@/config/security'),
             getApiKey: jest.fn(() => apiKey),
             getAuthenticationKey: jest.fn(() => apiKey),
-            isTokenAuthenticationEnabled: jest.fn(() => false),
+            isUserTokenAuthenticationEnabled: jest.fn(() => false),
         };
     },
 );
@@ -74,7 +74,7 @@ jest.mock(
 describe('identify', () => {
     afterEach(() => {
         jest.mocked(cookies().set).mockClear();
-        jest.mocked(isTokenAuthenticationEnabled).mockReset();
+        jest.mocked(isUserTokenAuthenticationEnabled).mockReset();
         jest.useRealTimers();
     });
 
@@ -83,9 +83,9 @@ describe('identify', () => {
 
         const userId = 'test';
 
-        jest.mocked(isTokenAuthenticationEnabled).mockReturnValue(false);
+        jest.mocked(isUserTokenAuthenticationEnabled).mockReturnValue(false);
 
-        expect(isTokenAuthenticationEnabled()).toBe(false);
+        expect(isUserTokenAuthenticationEnabled()).toBe(false);
 
         await expect(identify(userId)).resolves.toBeUndefined();
 
@@ -114,9 +114,9 @@ describe('identify', () => {
             ),
         );
 
-        jest.mocked(isTokenAuthenticationEnabled).mockReturnValue(true);
+        jest.mocked(isUserTokenAuthenticationEnabled).mockReturnValue(true);
 
-        expect(isTokenAuthenticationEnabled()).toBe(true);
+        expect(isUserTokenAuthenticationEnabled()).toBe(true);
 
         await expect(identify(userId)).resolves.toBeUndefined();
 

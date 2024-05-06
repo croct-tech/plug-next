@@ -55,11 +55,14 @@ export function getUserTokenCookieOptions(): CookieOptions {
 }
 
 export function getPreviewCookieOptions(): CookieOptions {
+    const domain = normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_DOMAIN, '');
+
     return {
-        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME, 'preview-token'),
-        httpOnly: true,
+        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME, 'preview-token'),
         secure: true,
+        path: '/',
         sameSite: 'strict',
+        ...(domain !== '' ? {domain: domain} : {}),
     };
 }
 

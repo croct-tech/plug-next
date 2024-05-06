@@ -2,11 +2,11 @@ import {cookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
 import {v4 as uuid} from 'uuid';
 import {getAppId} from '@/config/appId';
-import {getAuthenticationKey, isTokenAuthenticationEnabled} from '@/config/security';
+import {getAuthenticationKey, isUserTokenAuthenticationEnabled} from '@/config/security';
 import {getUserTokenCookieOptions} from '@/config/cookie';
 
 export async function identify(userId: string): Promise<void> {
-    const token = isTokenAuthenticationEnabled()
+    const token = isUserTokenAuthenticationEnabled()
         ? await Token.issue(getAppId(), userId)
             .withTokenId(uuid())
             .signedWith(getAuthenticationKey())

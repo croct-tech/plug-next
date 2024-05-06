@@ -1,4 +1,4 @@
-import {getApiKey, getAuthenticationKey, isTokenAuthenticationEnabled} from './security';
+import {getApiKey, getAuthenticationKey, isUserTokenAuthenticationEnabled} from './security';
 
 describe('security', () => {
     const identifier = '00000000-0000-0000-0000-000000000000';
@@ -46,7 +46,7 @@ describe('security', () => {
             process.env.CROCT_API_KEY = identifier;
 
             expect(() => getAuthenticationKey()).toThrow(
-                'Croct\'s API key does not have authentication permissions. '
+                'Croct\'s API key does not have a private key. '
                     + 'Please generate an API key with authenticate permissions and update '
                     + 'the CROCT_API_KEY environment variable.',
             );
@@ -65,31 +65,41 @@ describe('security', () => {
         });
     });
 
-    describe('isTokenAuthenticationEnabled', () => {
+    describe('isUserTokenAuthenticationEnabled', () => {
         beforeEach(() => {
-            delete process.env.CROCT_AUTHENTICATED_TOKENS;
+            delete process.env.CROCT_API_KEY;
+            delete process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION;
         });
 
-        it('should return true if the environment variable is set to true', () => {
-            process.env.CROCT_AUTHENTICATED_TOKENS = 'true';
-
-            expect(isTokenAuthenticationEnabled()).toBe(true);
+        it('should return false if no API key is set', () => {
+            expect(isUserTokenAuthenticationEnabled()).toBe(false);
         });
 
-        it('should return false if the environment variable is set to false', () => {
-            process.env.CROCT_AUTHENTICATED_TOKENS = 'false';
+        it('should return true if the environment variable is not set', () => {
+            process.env.CROCT_API_KEY = `${identifier}:${privateKey}`;
 
-            expect(isTokenAuthenticationEnabled()).toBe(false);
+            expect(isUserTokenAuthenticationEnabled()).toBe(true);
         });
 
-        it('should return false if the environment variable is missing', () => {
-            expect(isTokenAuthenticationEnabled()).toBe(false);
+        it('should return true if the environment variable is empty', () => {
+            process.env.CROCT_API_KEY = `${identifier}:${privateKey}`;
+            process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = '';
+
+            expect(isUserTokenAuthenticationEnabled()).toBe(true);
         });
 
-        it('should return false if the environment variable is empty', () => {
-            process.env.CROCT_AUTHENTICATED_TOKENS = '';
+        it('should return true if the environment variable is set to false', () => {
+            process.env.CROCT_API_KEY = `${identifier}:${privateKey}`;
+            process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = 'false';
 
-            expect(isTokenAuthenticationEnabled()).toBe(false);
+            expect(isUserTokenAuthenticationEnabled()).toBe(true);
+        });
+
+        it('should return false if the environment variable is set to true', () => {
+            process.env.CROCT_API_KEY = `${identifier}:${privateKey}`;
+            process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = 'true';
+
+            expect(isUserTokenAuthenticationEnabled()).toBe(false);
         });
     });
 });

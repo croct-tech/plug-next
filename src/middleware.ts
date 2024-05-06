@@ -10,7 +10,7 @@ import {
     getUserTokenCookieOptions,
 } from '@/config/cookie';
 import {getAppId} from '@/config/appId';
-import {getAuthenticationKey, isTokenAuthenticationEnabled} from './config/security';
+import {getAuthenticationKey, isUserTokenAuthenticationEnabled} from './config/security';
 
 // Ignore static assets
 export const config = {
@@ -140,7 +140,7 @@ async function getUserToken(
     }
 
     const userId = userIdResolver !== undefined ? await userIdResolver(request) : undefined;
-    const authenticated = isTokenAuthenticationEnabled();
+    const authenticated = isUserTokenAuthenticationEnabled();
 
     if (
         token === null

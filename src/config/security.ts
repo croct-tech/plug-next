@@ -19,7 +19,7 @@ export function getAuthenticationKey(): ApiKey {
 
     if (!apiKey.hasPrivateKey()) {
         throw new Error(
-            'Croct\'s API key does not have authentication permissions. '
+            'Croct\'s API key does not have a private key. '
             + 'Please generate an API key with authenticate permissions and update '
             + 'the CROCT_API_KEY environment variable.',
         );
@@ -28,6 +28,7 @@ export function getAuthenticationKey(): ApiKey {
     return apiKey;
 }
 
-export function isTokenAuthenticationEnabled(): boolean {
-    return process.env.CROCT_AUTHENTICATED_TOKENS === 'true';
+export function isUserTokenAuthenticationEnabled(): boolean {
+    return process.env.CROCT_API_KEY !== undefined
+        && process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION !== 'true';
 }

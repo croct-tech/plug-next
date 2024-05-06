@@ -68,35 +68,37 @@ describe('cookie', () => {
 
     describe('getPreviewCookieOptions', () => {
         beforeEach(() => {
-            delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME;
+            delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME;
         });
 
         it('should return default options', () => {
             expect(getPreviewCookieOptions()).toEqual({
                 name: 'preview-token',
-                httpOnly: true,
+                path: '/',
                 secure: true,
                 sameSite: 'strict',
             });
         });
 
         it('should return default options for empty values', () => {
-            process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME = '';
+            process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME = '';
 
             expect(getPreviewCookieOptions()).toEqual({
                 name: 'preview-token',
-                httpOnly: true,
+                path: '/',
                 secure: true,
                 sameSite: 'strict',
             });
         });
 
         it('should return custom options', () => {
-            process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME = 'custom-preview-token';
+            process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME = 'custom-preview-token';
+            process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_DOMAIN = 'example.com';
 
             expect(getPreviewCookieOptions()).toEqual({
-                name: process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME,
-                httpOnly: true,
+                name: process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME,
+                path: '/',
+                domain: process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_DOMAIN,
                 secure: true,
                 sameSite: 'strict',
             });

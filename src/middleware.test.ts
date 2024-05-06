@@ -76,7 +76,6 @@ describe('middleware', () => {
         userTokenCookieName?: string,
         userTokenCookieDuration?: string,
         previewCookieName?: string,
-        previewCookieDuration?: string,
         apiKey?: string,
         appId?: string,
         enableTokenAuthentication?: boolean,
@@ -108,11 +107,7 @@ describe('middleware', () => {
         }
 
         if (vars.previewCookieName !== undefined) {
-            process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME = vars.previewCookieName;
-        }
-
-        if (vars.previewCookieDuration !== undefined) {
-            process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_DURATION = vars.previewCookieName;
+            process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME = vars.previewCookieName;
         }
 
         if (vars.apiKey !== undefined) {
@@ -124,7 +119,7 @@ describe('middleware', () => {
         }
 
         if (vars.enableTokenAuthentication !== undefined) {
-            process.env.CROCT_AUTHENTICATED_TOKENS = vars.enableTokenAuthentication ? 'true' : 'false';
+            process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = vars.enableTokenAuthentication ? 'false' : 'true';
         }
     }
 
@@ -135,10 +130,9 @@ describe('middleware', () => {
         delete process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DOMAIN;
         delete process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_NAME;
         delete process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION;
-        delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_NAME;
-        delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_COOKIE_DURATION;
+        delete process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME;
         delete process.env.CROCT_API_KEY;
-        delete process.env.CROCT_ENABLE_TOKEN_AUTHENTICATION;
+        delete process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION;
 
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
     });
@@ -382,11 +376,9 @@ describe('middleware', () => {
         const response = createResponseMock();
 
         const cookieName = 'custom_preview';
-        const duration = '30';
 
         setEnvVars({
             previewCookieName: cookieName,
-            previewCookieDuration: duration,
         });
 
         const url = new URL('https://example.com/');
@@ -408,9 +400,9 @@ describe('middleware', () => {
         expect(request.headers.get(Header.PREVIEW_TOKEN)).toBe(previewToken);
 
         expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
-            name: 'custom_preview',
+            name: cookieName,
+            path: '/',
             sameSite: 'Strict',
-            httpOnly: true,
             secure: true,
             value: previewToken,
         }]);
@@ -421,11 +413,9 @@ describe('middleware', () => {
         const response = createResponseMock();
 
         const cookieName = 'custom_preview';
-        const duration = '30';
 
         setEnvVars({
             previewCookieName: cookieName,
-            previewCookieDuration: duration,
         });
 
         const url = new URL('https://example.com/');
@@ -458,11 +448,9 @@ describe('middleware', () => {
         const response = createResponseMock();
 
         const cookieName = 'custom_preview';
-        const duration = '30';
 
         setEnvVars({
             previewCookieName: cookieName,
-            previewCookieDuration: duration,
         });
 
         const url = new URL('https://example.com/');
@@ -495,11 +483,9 @@ describe('middleware', () => {
         const response = createResponseMock();
 
         const cookieName = 'custom_preview';
-        const duration = '30';
 
         setEnvVars({
             previewCookieName: cookieName,
-            previewCookieDuration: duration,
         });
 
         const url = new URL('https://example.com/');
