@@ -3,6 +3,8 @@ import 'server-only';
 import {evaluate as executeQuery, EvaluationOptions as BaseOptions} from '@croct/plug-react/api';
 import type {JsonValue} from '@croct/plug-react';
 import {cookies, headers} from 'next/headers';
+import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
+import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {getApiKey} from '@/config/security';
 import {getRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
@@ -13,7 +15,7 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
     const request = getRequestContext(headers(), cookies());
 
     return executeQuery<T>(query, {
-        apiKey: getApiKey().getIdentifier(),
+        apiKey: getApiKey(),
         clientIp: request.clientIp ?? '127.0.0.1',
         ...(request.previewToken !== undefined && {previewToken: request.previewToken}),
         ...(request.userToken !== undefined && {userToken: request.userToken}),
@@ -24,6 +26,7 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
             cache: 'no-store',
         },
         ...options,
+        logger: options.logger ?? FilteredLogger.include(new ConsoleLogger(), ['warn', 'error']),
         ...(request.uri !== undefined
             ? {
                 context: {

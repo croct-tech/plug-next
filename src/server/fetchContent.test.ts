@@ -1,6 +1,7 @@
 import {fetchContent as loadContent, FetchOptions as ResolvedFetchOptions} from '@croct/plug-react/api';
 import {FetchResponse} from '@croct/plug/plug';
-import {ApiKey as MockApiKey} from '@croct/sdk/apiKey';
+import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
+import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {fetchContent, FetchOptions} from './fetchContent';
 import {getRequestContext, RequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
@@ -93,19 +94,20 @@ describe('fetchContent', () => {
             },
             options: {},
             resolvedOptions: {
-                apiKey: apiKey,
+                apiKey: ApiKey.from(apiKey),
                 clientId: request.clientId,
                 clientIp: '127.0.0.1',
                 extra: {
                     cache: 'no-store',
                 },
+                logger: expect.any(FilteredLogger),
             },
         },
         'with full context': {
             request: request,
             options: {},
             resolvedOptions: {
-                apiKey: apiKey,
+                apiKey: ApiKey.from(apiKey),
                 previewToken: request.previewToken,
                 clientId: request.clientId,
                 clientIp: request.clientIp,
@@ -119,6 +121,7 @@ describe('fetchContent', () => {
                 extra: {
                     cache: 'no-store',
                 },
+                logger: expect.any(FilteredLogger),
             },
         },
         'with URL and without referrer': {
@@ -128,7 +131,7 @@ describe('fetchContent', () => {
             },
             options: {},
             resolvedOptions: {
-                apiKey: apiKey,
+                apiKey: ApiKey.from(apiKey),
                 clientId: request.clientId,
                 clientIp: '127.0.0.1',
                 context: {
@@ -139,6 +142,7 @@ describe('fetchContent', () => {
                 extra: {
                     cache: 'no-store',
                 },
+                logger: expect.any(FilteredLogger),
             },
         },
         'with overridden options': {
@@ -151,12 +155,13 @@ describe('fetchContent', () => {
                 },
             },
             resolvedOptions: {
-                apiKey: apiKey,
+                apiKey: ApiKey.from(apiKey),
                 clientId: request.clientId,
                 clientIp: '127.0.0.1',
                 extra: {
                     cache: 'force-cache',
                 },
+                logger: expect.any(FilteredLogger),
             },
         },
     }))('should forward the call %s to the fetchContent function', async (_, scenario) => {
@@ -194,15 +199,9 @@ describe('fetchContent', () => {
 
         await fetchContent<any, any>(slotId);
 
-        expect(loadContent).toHaveBeenCalledWith(slotId, {
-            apiKey: apiKey,
-            clientId: request.clientId,
-            clientIp: '127.0.0.1',
+        expect(loadContent).toHaveBeenCalledWith(slotId, expect.objectContaining({
             timeout: defaultTimeout,
-            extra: {
-                cache: 'no-store',
-            },
-        });
+        }));
     });
 
     it('should override the default fetch timeout', async () => {
@@ -227,14 +226,8 @@ describe('fetchContent', () => {
             timeout: timeout,
         });
 
-        expect(loadContent).toHaveBeenCalledWith(slotId, {
-            apiKey: apiKey,
-            clientId: request.clientId,
-            clientIp: '127.0.0.1',
+        expect(loadContent).toHaveBeenCalledWith(slotId, expect.objectContaining({
             timeout: timeout,
-            extra: {
-                cache: 'no-store',
-            },
-        });
+        }));
     });
 });

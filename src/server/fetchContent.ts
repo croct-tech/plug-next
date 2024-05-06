@@ -2,6 +2,8 @@ import 'server-only';
 
 import {DynamicContentOptions, fetchContent as loadContent} from '@croct/plug-react/api';
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
+import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
+import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {cookies, headers} from 'next/headers';
 import {getApiKey} from '@/config/security';
 import {getRequestContext} from '@/config/context';
@@ -15,7 +17,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
 ): Promise<SlotContent<I, C>> {
     const request = getRequestContext(headers(), cookies());
     const promise = loadContent<I, C>(slotId, {
-        apiKey: getApiKey().getIdentifier(),
+        apiKey: getApiKey(),
         clientIp: request.clientIp ?? '127.0.0.1',
         ...(request.previewToken !== undefined && {previewToken: request.previewToken}),
         ...(request.userToken !== undefined && {userToken: request.userToken}),
@@ -37,6 +39,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
             cache: 'no-store',
         },
         ...options,
+        logger: options.logger ?? FilteredLogger.include(new ConsoleLogger(), ['warn', 'error']),
     });
 
     return promise.then(({content}) => content);

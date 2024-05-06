@@ -1,5 +1,7 @@
+/* eslint-disable testing-library/no-debugging-utils -- Needed for testing */
 import {evaluate as executeQuery, EvaluationOptions as ResolvedEvaluationOptions} from '@croct/plug-react/api';
-import {ApiKey as MockApiKey} from '@croct/sdk/apiKey';
+import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
+import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {cql, evaluate, EvaluationOptions} from './evaluate';
 import {getRequestContext, RequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
@@ -87,19 +89,20 @@ describe('evaluation', () => {
                 },
                 options: {},
                 resolvedOptions: {
-                    apiKey: apiKey,
+                    apiKey: ApiKey.from(apiKey),
                     clientId: request.clientId,
                     clientIp: '127.0.0.1',
                     extra: {
                         cache: 'no-store',
                     },
+                    logger: expect.any(FilteredLogger),
                 },
             },
             'with full context': {
                 request: request,
                 options: {},
                 resolvedOptions: {
-                    apiKey: apiKey,
+                    apiKey: ApiKey.from(apiKey),
                     clientId: request.clientId,
                     clientIp: request.clientIp,
                     clientAgent: request.clientAgent,
@@ -112,6 +115,7 @@ describe('evaluation', () => {
                     extra: {
                         cache: 'no-store',
                     },
+                    logger: expect.any(FilteredLogger),
                 },
             },
             'with URL and without referrer': {
@@ -121,7 +125,7 @@ describe('evaluation', () => {
                 },
                 options: {},
                 resolvedOptions: {
-                    apiKey: apiKey,
+                    apiKey: ApiKey.from(apiKey),
                     clientId: request.clientId,
                     clientIp: '127.0.0.1',
                     context: {
@@ -132,6 +136,7 @@ describe('evaluation', () => {
                     extra: {
                         cache: 'no-store',
                     },
+                    logger: expect.any(FilteredLogger),
                 },
             },
             'with override options': {
@@ -144,12 +149,13 @@ describe('evaluation', () => {
                     },
                 },
                 resolvedOptions: {
-                    apiKey: apiKey,
+                    apiKey: ApiKey.from(apiKey),
                     clientId: request.clientId,
                     clientIp: '127.0.0.1',
                     extra: {
                         cache: 'force-cache',
                     },
+                    logger: expect.any(FilteredLogger),
                 },
             },
         }))('should forward the call %s to the fetchContent function', async (_, scenario) => {
@@ -164,6 +170,32 @@ describe('evaluation', () => {
             expect(executeQuery).toHaveBeenCalledWith(query, scenario.resolvedOptions);
         });
 
+        it('should log warnings and errors', async () => {
+            jest.spyOn(console, 'warn').mockImplementation();
+            jest.spyOn(console, 'error').mockImplementation();
+            jest.spyOn(console, 'log').mockImplementation();
+            jest.spyOn(console, 'info').mockImplementation();
+
+            jest.mocked(executeQuery).mockResolvedValue(true);
+            jest.mocked(getRequestContext).mockReturnValue(request);
+
+            await evaluate('true');
+
+            const {logger} = jest.mocked(executeQuery).mock.calls[0][1];
+
+            expect(logger).toBeInstanceOf(FilteredLogger);
+
+            logger?.info('log');
+            logger?.debug('debug');
+            logger?.warn('warning');
+            logger?.error('error');
+
+            expect(console.log).not.toHaveBeenCalled();
+            expect(console.info).not.toHaveBeenCalled();
+            expect(console.warn).toHaveBeenCalledWith('warning');
+            expect(console.error).toHaveBeenCalledWith('error');
+        });
+
         it('should use the default fetch timeout', async () => {
             const query = 'true';
             const result = true;
@@ -175,22 +207,9 @@ describe('evaluation', () => {
 
             await expect(evaluate(query)).resolves.toBe(result);
 
-            expect(executeQuery).toHaveBeenCalledWith(query, {
-                apiKey: apiKey,
-                clientId: request.clientId,
-                clientIp: request.clientIp,
-                clientAgent: request.clientAgent,
+            expect(executeQuery).toHaveBeenCalledWith(query, expect.objectContaining({
                 timeout: defaultTimeout,
-                context: {
-                    page: {
-                        url: request.uri,
-                        referrer: request.referrer,
-                    },
-                },
-                extra: {
-                    cache: 'no-store',
-                },
-            });
+            }));
         });
 
         it('should override the default fetch timeout', async () => {
@@ -206,7 +225,7 @@ describe('evaluation', () => {
             await expect(evaluate(query, {timeout: timeout})).resolves.toBe(result);
 
             expect(executeQuery).toHaveBeenCalledWith(query, {
-                apiKey: apiKey,
+                apiKey: ApiKey.from(apiKey),
                 clientId: request.clientId,
                 clientIp: request.clientIp,
                 clientAgent: request.clientAgent,
@@ -220,6 +239,7 @@ describe('evaluation', () => {
                 extra: {
                     cache: 'no-store',
                 },
+                logger: expect.any(FilteredLogger),
             });
         });
     });
@@ -234,7 +254,7 @@ describe('evaluation', () => {
             await expect(cql`true`).resolves.toBe(result);
 
             expect(executeQuery).toHaveBeenCalledWith('true', {
-                apiKey: apiKey,
+                apiKey: ApiKey.from(apiKey),
                 clientId: request.clientId,
                 clientIp: request.clientIp,
                 clientAgent: request.clientAgent,
@@ -247,6 +267,7 @@ describe('evaluation', () => {
                 extra: {
                     cache: 'no-store',
                 },
+                logger: expect.any(FilteredLogger),
             });
         });
 
@@ -265,7 +286,7 @@ describe('evaluation', () => {
             expect(executeQuery).toHaveBeenCalledWith(
                 '[1, true, false, "variable", context[\'arg4\'], context[\'arg5\']]',
                 {
-                    apiKey: apiKey,
+                    apiKey: ApiKey.from(apiKey),
                     clientId: request.clientId,
                     clientIp: request.clientIp,
                     clientAgent: request.clientAgent,
@@ -282,6 +303,7 @@ describe('evaluation', () => {
                     extra: {
                         cache: 'no-store',
                     },
+                    logger: expect.any(FilteredLogger),
                 },
             );
         });
