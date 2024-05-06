@@ -34,7 +34,7 @@ describe('<CroctProvider />', () => {
         console.error = consoleError;
     });
 
-    it('should fail no application ID is provided', () => {
+    it('should fail if no application ID is provided', () => {
         jest.spyOn(console, 'error').mockImplementation();
 
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '';

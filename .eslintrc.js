@@ -22,14 +22,4 @@ module.exports = {
             version: 'detect',
         },
     },
-    overrides: [
-        {
-            files: [
-                '**/*.stories.tsx',
-            ],
-            rules: {
-                'import/no-default-export': 'off',
-            },
-        },
-    ],
 };
