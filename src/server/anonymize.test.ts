@@ -2,7 +2,6 @@ import {ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {cookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
 import {v4 as uuid} from 'uuid';
-import {identify} from '@/server/identify';
 import {getAppId} from '@/config/appId';
 import {getAuthenticationKey, isTokenAuthenticationEnabled} from '@/config/security';
 import {anonymize} from '@/server/anonymize';
