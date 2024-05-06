@@ -1,3 +1,4 @@
+/* eslint-disable testing-library/no-debugging-utils -- Needed for testing */
 import {fetchContent as loadContent, FetchOptions as ResolvedFetchOptions} from '@croct/plug-react/api';
 import {FetchResponse} from '@croct/plug/plug';
 import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
