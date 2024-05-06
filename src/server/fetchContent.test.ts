@@ -230,4 +230,35 @@ describe('fetchContent', () => {
             timeout: timeout,
         }));
     });
+
+    it('should log warnings and errors', async () => {
+        jest.spyOn(console, 'warn').mockImplementation();
+        jest.spyOn(console, 'error').mockImplementation();
+        jest.spyOn(console, 'log').mockImplementation();
+        jest.spyOn(console, 'info').mockImplementation();
+
+        jest.mocked(loadContent).mockResolvedValue({
+            content: {
+                _component: 'component',
+            },
+        });
+
+        jest.mocked(getRequestContext).mockReturnValue(request);
+
+        await fetchContent<any, any>('slot-id');
+
+        const {logger} = jest.mocked(loadContent).mock.calls[0][1] as ResolvedFetchOptions;
+
+        expect(logger).toBeInstanceOf(FilteredLogger);
+
+        logger?.info('log');
+        logger?.debug('debug');
+        logger?.warn('warning');
+        logger?.error('error');
+
+        expect(console.log).not.toHaveBeenCalled();
+        expect(console.info).not.toHaveBeenCalled();
+        expect(console.warn).toHaveBeenCalledWith('warning');
+        expect(console.error).toHaveBeenCalledWith('error');
+    });
 });
