@@ -22,7 +22,7 @@ export function getClientIdCookieOptions(): CookieOptions {
     const domain = normalizeValue(process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DOMAIN, '');
 
     return {
-        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_NAME, 'ct.cid'),
+        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_NAME, 'ct.client_id'),
         maxAge: parsedDuration,
         secure: true,
         path: '/',
@@ -45,7 +45,7 @@ export function getUserTokenCookieOptions(): CookieOptions {
     const domain = normalizeValue(process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DOMAIN, '');
 
     return {
-        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_NAME, 'ct.utk'),
+        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_NAME, 'ct.user_token'),
         maxAge: parsedDuration,
         secure: true,
         path: '/',
@@ -58,7 +58,7 @@ export function getPreviewCookieOptions(): CookieOptions {
     const domain = normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_DOMAIN, '');
 
     return {
-        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME, 'preview-token'),
+        name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME, 'ct.preview_token'),
         secure: true,
         path: '/',
         sameSite: 'strict',

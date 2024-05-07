@@ -10,7 +10,7 @@ describe('cookie', () => {
 
         it('should return default options', () => {
             expect(getClientIdCookieOptions()).toEqual({
-                name: 'ct.cid',
+                name: 'ct.client_id',
                 maxAge: 31536000,
                 secure: true,
                 path: '/',
@@ -24,7 +24,7 @@ describe('cookie', () => {
             process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DOMAIN = '';
 
             expect(getClientIdCookieOptions()).toEqual({
-                name: 'ct.cid',
+                name: 'ct.client_id',
                 maxAge: 31536000,
                 secure: true,
                 path: '/',
@@ -73,7 +73,7 @@ describe('cookie', () => {
 
         it('should return default options', () => {
             expect(getPreviewCookieOptions()).toEqual({
-                name: 'preview-token',
+                name: 'ct.preview_token',
                 path: '/',
                 secure: true,
                 sameSite: 'strict',
@@ -84,7 +84,7 @@ describe('cookie', () => {
             process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME = '';
 
             expect(getPreviewCookieOptions()).toEqual({
-                name: 'preview-token',
+                name: 'ct.preview_token',
                 path: '/',
                 secure: true,
                 sameSite: 'strict',
@@ -114,7 +114,7 @@ describe('cookie', () => {
 
         it('should return default options', () => {
             expect(getUserTokenCookieOptions()).toEqual({
-                name: 'ct.utk',
+                name: 'ct.user_token',
                 maxAge: 604800,
                 secure: true,
                 path: '/',
@@ -128,7 +128,7 @@ describe('cookie', () => {
             process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DOMAIN = '';
 
             expect(getUserTokenCookieOptions()).toEqual({
-                name: 'ct.utk',
+                name: 'ct.user_token',
                 maxAge: 604800,
                 secure: true,
                 path: '/',

@@ -48,7 +48,7 @@ describe('getRequestContext', () => {
             clientAgent: 'Mozilla/5.0',
             referrer: 'http://referrer.com',
             clientIp: '192.0.0.1',
-            previewToken: 'preview-token',
+            previewToken: 'ct.preview_token',
             userToken: token.toString(),
         } satisfies RequestContext;
 

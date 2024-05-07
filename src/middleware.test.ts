@@ -160,7 +160,7 @@ describe('middleware', () => {
         'no environment variables': {
             envVars: {},
             cookie: {
-                name: 'ct.cid',
+                name: 'ct.client_id',
                 secure: true,
                 path: '/',
                 sameSite: 'Strict',
@@ -174,7 +174,7 @@ describe('middleware', () => {
                 cidCookieDuration: '',
             },
             cookie: {
-                name: 'ct.cid',
+                name: 'ct.client_id',
                 secure: true,
                 path: '/',
                 sameSite: 'Strict',
@@ -522,7 +522,7 @@ describe('middleware', () => {
         'no environment variables': {
             envVars: {},
             cookie: {
-                name: 'ct.utk',
+                name: 'ct.user_token',
                 secure: true,
                 path: '/',
                 sameSite: 'Strict',
@@ -536,7 +536,7 @@ describe('middleware', () => {
                 userTokenCookieDuration: '',
             },
             cookie: {
-                name: 'ct.utk',
+                name: 'ct.user_token',
                 secure: true,
                 path: '/',
                 sameSite: 'Strict',
