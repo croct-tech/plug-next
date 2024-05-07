@@ -1,7 +1,7 @@
 module.exports = {
     testEnvironment: 'node',
-    setupFilesAfterEnv: ['jest-extended/all'],
     testMatch: ['<rootDir>/src/**/*.test.{ts,tsx}'],
+    setupFilesAfterEnv: ['jest-extended/all', '<rootDir>/jest.setup.js'],
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
     },

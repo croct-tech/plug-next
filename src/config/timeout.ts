@@ -1,8 +1,12 @@
+const DEFAULT_FETCH_TIMEOUT = 2000;
+
 export function getDefaultFetchTimeout(): number | undefined {
     const timeout = process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT;
 
     if (timeout === undefined || timeout === '') {
-        return undefined;
+        return process.env.NODE_ENV === 'production'
+            ? DEFAULT_FETCH_TIMEOUT
+            : undefined;
     }
 
     const milliseconds = Number.parseInt(timeout, 10);

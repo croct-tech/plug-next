@@ -2,8 +2,8 @@ import {getApiKey, getAuthenticationKey, isUserTokenAuthenticationEnabled} from 
 
 describe('security', () => {
     const identifier = '00000000-0000-0000-0000-000000000000';
-    const privateKey = '302e020100300506032b6570042204206d0e45033d54'
-        + 'aa3231fcef9f0eaa1ff559a68884dbcc8931181b312f90513261';
+    const privateKey = 'ES256;MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3TbbvRM7DNwxY3XGWDmlSRPSfZ9b+ch9TO3jQ6'
+        + '8Zyj+hRANCAASmJj/EiEhUaLAWnbXMTb/85WADkuFgoELGZ5ByV7YPlbb2wY6oLjzGkpF6z8iDrvJ4kV6EhaJ4n0HwSQckVLNE';
 
     describe('getApiKey', () => {
         beforeEach(() => {
@@ -11,9 +11,11 @@ describe('security', () => {
         });
 
         it('should return the API key', () => {
-            process.env.CROCT_API_KEY = identifier;
+            const key = `${identifier}:${privateKey}`;
 
-            expect(getApiKey().export()).toBe(process.env.CROCT_API_KEY);
+            process.env.CROCT_API_KEY = key;
+
+            expect(getApiKey().export()).toBe(key);
         });
 
         it('should throw an error if the API key is not set', () => {

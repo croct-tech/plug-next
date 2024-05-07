@@ -1,7 +1,6 @@
 import {ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {cookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
-import {v4 as uuid} from 'uuid';
 import {identify} from '@/server/identify';
 import {getAppId} from '@/config/appId';
 import {getAuthenticationKey, isUserTokenAuthenticationEnabled} from '@/config/security';
@@ -106,13 +105,21 @@ describe('identify', () => {
         jest.useFakeTimers({now: Date.now()});
         const userId = 'test';
 
-        jest.mocked(getAuthenticationKey).mockReturnValue(
-            MockApiKey.of(
-                '00000000-0000-0000-0000-000000000001',
-                '302e020100300506032b6570042204206d0e45033d54'
-                + 'aa3231fcef9f0eaa1ff559a68884dbcc8931181b312f90513261',
-            ),
+        const keyPair = await crypto.subtle.generateKey(
+            {
+                name: 'ECDSA',
+                namedCurve: 'P-256',
+            },
+            true,
+            ['sign', 'verify'],
         );
+
+        const exportedKey = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+        const privateKey = Buffer.from(exportedKey).toString('base64');
+
+        const apiKey = MockApiKey.of('00000000-0000-0000-0000-000000000001', `ES256;${privateKey}`);
+
+        jest.mocked(getAuthenticationKey).mockReturnValue(apiKey);
 
         jest.mocked(isUserTokenAuthenticationEnabled).mockReturnValue(true);
 
@@ -129,10 +136,24 @@ describe('identify', () => {
             domain: undefined,
             secure: false,
             sameSite: 'lax',
-            value: await Token.issue(getAppId(), userId)
-                .withTokenId(uuid())
-                .signedWith(getAuthenticationKey())
-                .then(token => token.toString()),
+            value: expect.toBeString(),
         });
+
+        const {value: cookieValue} = jest.mocked(jar.set).mock.calls[0][0] as {value: string};
+        const [header, payload, signature] = cookieValue.split('.');
+
+        const verification = crypto.subtle.verify(
+            {
+                name: 'ECDSA',
+                hash: {
+                    name: 'SHA-256',
+                },
+            },
+            keyPair.publicKey,
+            Buffer.from(signature, 'base64url'),
+            Buffer.from(`${header}.${payload}`),
+        );
+
+        await expect(verification).resolves.toBeTrue();
     });
 });

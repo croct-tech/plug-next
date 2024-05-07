@@ -921,8 +921,8 @@ describe('middleware', () => {
         jest.useFakeTimers({now: scenario.now !== undefined ? scenario.now * 1000 : undefined});
 
         const keyIdentifier = scenario.requestToken?.apiKey ?? '00000000-0000-0000-0000-000000000001';
-        const privateKey = '302e020100300506032b6570042204206d0e45033d54'
-            + 'aa3231fcef9f0eaa1ff559a68884dbcc8931181b312f90513261';
+        const privateKey = 'ES256;MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3TbbvRM7DNwxY3XGWDmlSRPSfZ9b+ch9TO3'
+            + 'jQ68Zyj+hRANCAASmJj/EiEhUaLAWnbXMTb/85WADkuFgoELGZ5ByV7YPlbb2wY6oLjzGkpF6z8iDrvJ4kV6EhaJ4n0HwSQckVLNE';
 
         const oldApiKey = ApiKey.of(keyIdentifier, privateKey);
         const currentApiKey = scenario.currentApiKey !== undefined

@@ -290,7 +290,6 @@ Now, suppose you have the following form in your application:
 
 import React, {FunctionComponent} from 'react';
 import {login} from '@/app/services';
-import {identifyUser} from '@/app/actions';
 
 export const LoginForm: FunctionComponent = () => {
     const onSubmit = async (form: FormData): Promise<void> => {
