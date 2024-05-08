@@ -1,17 +1,9 @@
 import {cookies} from 'next/headers';
-import {Token} from '@croct/sdk/token';
-import {v4 as uuid} from 'uuid';
 import {getUserTokenCookieOptions} from '@/config/cookie';
-import {getAuthenticationKey, isUserTokenAuthenticationEnabled} from '@/config/security';
-import {getAppId} from '@/config/appId';
+import {issueToken} from '@/config/security';
 
 export async function anonymize(): Promise<void> {
-    const token = isUserTokenAuthenticationEnabled()
-        ? await Token.issue(getAppId())
-            .withTokenId(uuid())
-            .signedWith(getAuthenticationKey())
-        : Token.issue(getAppId());
-
+    const token = await issueToken();
     const jar = cookies();
     const cookieOptions = getUserTokenCookieOptions();
 

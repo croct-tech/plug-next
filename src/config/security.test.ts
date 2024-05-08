@@ -1,4 +1,12 @@
-import {getApiKey, getAuthenticationKey, isUserTokenAuthenticationEnabled} from './security';
+import {ApiKey as MockApiKey} from '@croct/sdk/apiKey';
+import {
+    getApiKey,
+    getAuthenticationKey,
+    getTokenDuration,
+    issueToken,
+    isUserTokenAuthenticationEnabled,
+} from './security';
+import {getAppId} from '@/config/appId';
 
 describe('security', () => {
     const identifier = '00000000-0000-0000-0000-000000000000';
@@ -102,6 +110,147 @@ describe('security', () => {
             process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = 'true';
 
             expect(isUserTokenAuthenticationEnabled()).toBe(false);
+        });
+    });
+
+    describe('getTokenDuration', () => {
+        beforeEach(() => {
+            delete process.env.CROCT_TOKEN_DURATION;
+        });
+
+        it('should return the default duration if not set', () => {
+            expect(getTokenDuration()).toBe(24 * 60 * 60);
+        });
+
+        it('should return the duration if set', () => {
+            process.env.CROCT_TOKEN_DURATION = '3600';
+
+            expect(getTokenDuration()).toBe(3600);
+        });
+
+        it('should throw an error if the duration is not a number', () => {
+            process.env.CROCT_TOKEN_DURATION = 'invalid';
+
+            expect(() => getTokenDuration()).toThrow('The token duration must be a positive integer.');
+        });
+
+        it('should throw an error if the duration is not a positive number', () => {
+            process.env.CROCT_TOKEN_DURATION = '-1';
+
+            expect(() => getTokenDuration()).toThrow('The token duration must be a positive integer.');
+        });
+    });
+
+    describe('issueToken', () => {
+        beforeEach(() => {
+            delete process.env.NEXT_PUBLIC_CROCT_APP_ID;
+            delete process.env.CROCT_API_KEY;
+            delete process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION;
+            delete process.env.CROCT_TOKEN_DURATION;
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it.each<[string, string|undefined]>([
+            ['an anonymous user', undefined],
+            ['an identified user', 'user-id'],
+        ])('should return a signed token for %s', async (_, userId) => {
+            jest.useFakeTimers({now: Date.now()});
+
+            const keyPair = await crypto.subtle.generateKey(
+                {
+                    name: 'ECDSA',
+                    namedCurve: 'P-256',
+                },
+                true,
+                ['sign', 'verify'],
+            );
+
+            const localPrivateKey = Buffer.from(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey))
+                .toString('base64');
+
+            const apiKey = MockApiKey.of('00000000-0000-0000-0000-000000000001', `ES256;${localPrivateKey}`);
+
+            process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+            process.env.CROCT_API_KEY = apiKey.export();
+            process.env.CROCT_TOKEN_DURATION = '3600';
+            process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = 'false';
+
+            expect(getAppId()).toBe(process.env.NEXT_PUBLIC_CROCT_APP_ID);
+            expect(getAuthenticationKey().export()).toBe(apiKey.export());
+            expect(isUserTokenAuthenticationEnabled()).toBe(true);
+            expect(getTokenDuration()).toBe(3600);
+
+            const token = await issueToken(userId);
+
+            expect(token.getHeaders()).toEqual({
+                alg: 'ES256',
+                typ: 'JWT',
+                appId: process.env.NEXT_PUBLIC_CROCT_APP_ID,
+                kid: await apiKey.getIdentifierHash(),
+            });
+
+            expect(token.getPayload()).toEqual({
+                iat: Math.floor(Date.now() / 1000),
+                exp: Math.floor(Date.now() / 1000) + 3600,
+                iss: 'croct.io',
+                aud: 'croct.io',
+                sub: userId,
+                jti: expect.stringMatching(/^[a-f0-9-]{36}$/),
+            });
+
+            const [header, payload, signature] = token.toString().split('.');
+
+            const verification = crypto.subtle.verify(
+                {
+                    name: 'ECDSA',
+                    hash: {
+                        name: 'SHA-256',
+                    },
+                },
+                keyPair.publicKey,
+                Buffer.from(signature, 'base64url'),
+                Buffer.from(`${header}.${payload}`),
+            );
+
+            await expect(verification).resolves.toBeTrue();
+        });
+
+        it.each<[string, string|undefined]>([
+            ['an anonymous user', undefined],
+            ['an identified user', 'user-id'],
+        ])('should return a unsigned token for %s', async (_, userId) => {
+            jest.useFakeTimers({now: Date.now()});
+
+            process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+            process.env.CROCT_API_KEY = `${identifier}:${privateKey}`;
+            process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = 'true';
+            process.env.CROCT_TOKEN_DURATION = '3600';
+
+            expect(getAppId()).toBe(process.env.NEXT_PUBLIC_CROCT_APP_ID);
+            expect(getAuthenticationKey().export()).toBe(process.env.CROCT_API_KEY);
+            expect(isUserTokenAuthenticationEnabled()).toBe(false);
+            expect(getTokenDuration()).toBe(3600);
+
+            const token = await issueToken(userId);
+
+            expect(token.getSignature()).toBe('');
+
+            expect(token.getHeaders()).toEqual({
+                alg: 'none',
+                typ: 'JWT',
+                appId: process.env.NEXT_PUBLIC_CROCT_APP_ID,
+            });
+
+            expect(token.getPayload()).toEqual({
+                iat: Math.floor(Date.now() / 1000),
+                exp: Math.floor(Date.now() / 1000) + 3600,
+                iss: 'croct.io',
+                aud: 'croct.io',
+                sub: userId,
+            });
         });
     });
 });

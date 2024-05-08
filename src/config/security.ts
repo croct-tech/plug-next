@@ -1,4 +1,7 @@
 import {ApiKey} from '@croct/sdk/apiKey';
+import {Token} from '@croct/sdk/token';
+import {v4 as uuid} from 'uuid';
+import {getAppId} from '@/config/appId';
 
 export function getApiKey(): ApiKey {
     const apiKey = process.env.CROCT_API_KEY;
@@ -31,4 +34,32 @@ export function getAuthenticationKey(): ApiKey {
 export function isUserTokenAuthenticationEnabled(): boolean {
     return process.env.CROCT_API_KEY !== undefined
         && process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION !== 'true';
+}
+
+export function getTokenDuration(): number {
+    const duration = process.env.CROCT_TOKEN_DURATION;
+
+    if (duration === undefined) {
+        return 24 * 60 * 60;
+    }
+
+    const parsedDuration = Number.parseInt(duration, 10);
+
+    if (Number.isNaN(parsedDuration) || parsedDuration <= 0) {
+        throw new Error('The token duration must be a positive integer.');
+    }
+
+    return parsedDuration;
+}
+
+export function issueToken(userId: string|null = null): Promise<Token> {
+    const token = Token.issue(getAppId(), userId)
+        .withDuration(getTokenDuration());
+
+    if (isUserTokenAuthenticationEnabled()) {
+        return token.withTokenId(uuid())
+            .signedWith(getAuthenticationKey());
+    }
+
+    return Promise.resolve(token);
 }
