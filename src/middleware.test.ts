@@ -576,7 +576,7 @@ describe('middleware', () => {
 
         expect(parsedToken.isAnonymous()).toBe(true);
         expect(parsedToken.getApplicationId()).toBe(getAppId());
-        expect(parsedToken.getTokenId()).toBeNull();
+        expect(parsedToken.getTokenId()).toEqual(expect.stringMatching(UUID_PATTERN));
 
         expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             ...scenario.cookie,

@@ -13,6 +13,8 @@ describe('security', () => {
     const privateKey = 'ES256;MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3TbbvRM7DNwxY3XGWDmlSRPSfZ9b+ch9TO3jQ6'
         + '8Zyj+hRANCAASmJj/EiEhUaLAWnbXMTb/85WADkuFgoELGZ5ByV7YPlbb2wY6oLjzGkpF6z8iDrvJ4kV6EhaJ4n0HwSQckVLNE';
 
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
     describe('getApiKey', () => {
         beforeEach(() => {
             delete process.env.CROCT_API_KEY;
@@ -198,7 +200,7 @@ describe('security', () => {
                 iss: 'croct.io',
                 aud: 'croct.io',
                 sub: userId,
-                jti: expect.stringMatching(/^[a-f0-9-]{36}$/),
+                jti: expect.stringMatching(UUID_PATTERN),
             });
 
             const [header, payload, signature] = token.toString().split('.');
@@ -250,6 +252,7 @@ describe('security', () => {
                 iss: 'croct.io',
                 aud: 'croct.io',
                 sub: userId,
+                jti: expect.stringMatching(UUID_PATTERN),
             });
         });
     });
