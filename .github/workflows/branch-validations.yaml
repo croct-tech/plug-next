@@ -16,13 +16,13 @@ jobs:
    runs-on: ubuntu-latest
    steps:
      - uses: actions/checkout@v4
-     - uses: actions/setup-node@v3
+     - uses: actions/setup-node@v4
        with:
          node-version: 20
 
      - name: Cache dependencies
        id: cache-dependencies
-       uses: actions/cache@v3
+       uses: actions/cache@v4
        with:
          path: node_modules
          key: node_modules-${{ hashFiles('package-lock.json') }}
@@ -39,13 +39,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Cache dependencies
         id: cache-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: node_modules-${{ hashFiles('package-lock.json') }}
@@ -63,13 +63,13 @@ jobs:
       - validate
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Cache dependencies
         id: cache-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: node_modules-${{ hashFiles('package-lock.json') }}
@@ -87,13 +87,13 @@ jobs:
       - validate
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Cache dependencies
         id: cache-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: node_modules-${{ hashFiles('package-lock.json') }}
@@ -102,7 +102,7 @@ jobs:
         if: steps.cache-dependencies.outputs.cache-hit != 'true'
         run: npm ci
 
-      - uses: paambaati/codeclimate-action@v5.0.0
+      - uses: paambaati/codeclimate-action@v6.0.0
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         with:
