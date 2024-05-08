@@ -54,11 +54,11 @@ export function getTokenDuration(): number {
 
 export function issueToken(userId: string|null = null): Promise<Token> {
     const token = Token.issue(getAppId(), userId)
-        .withTokenId(uuid())
         .withDuration(getTokenDuration());
 
     if (isUserTokenAuthenticationEnabled()) {
-        return token.signedWith(getAuthenticationKey());
+        return token.withTokenId(uuid())
+            .signedWith(getAuthenticationKey());
     }
 
     return Promise.resolve(token);
