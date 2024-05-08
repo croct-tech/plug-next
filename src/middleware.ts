@@ -1,6 +1,6 @@
 import {NextRequest, NextMiddleware, NextResponse} from 'next/server';
 import cookie from 'cookie';
-import {v4 as uuid, v4 as uuidv4} from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 import {Token} from '@croct/sdk/token';
 import {Header, QueryParameter} from '@/config/http';
 import {
@@ -9,8 +9,7 @@ import {
     getPreviewCookieOptions,
     getUserTokenCookieOptions,
 } from '@/config/cookie';
-import {getAppId} from '@/config/appId';
-import {getAuthenticationKey, isUserTokenAuthenticationEnabled} from './config/security';
+import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from './config/security';
 
 // Ignore static assets
 export const config = {
@@ -140,20 +139,15 @@ async function getUserToken(
     }
 
     const userId = userIdResolver !== undefined ? await userIdResolver(request) : undefined;
-    const authenticated = isUserTokenAuthenticationEnabled();
 
     if (
         token === null
-        || (authenticated && !token.isSigned())
+        || (isUserTokenAuthenticationEnabled() && !token.isSigned())
         || !token.isValidNow()
         || (userId !== undefined && (userId === null ? !token.isAnonymous() : !token.isSubject(userId)))
         || (token.isSigned() && !await token.matchesKeyId(getAuthenticationKey()))
     ) {
-        return authenticated
-            ? Token.issue(getAppId(), userId)
-                .withTokenId(uuid())
-                .signedWith(getAuthenticationKey())
-            : Token.issue(getAppId(), userId);
+        return issueToken(userId);
     }
 
     return token;
