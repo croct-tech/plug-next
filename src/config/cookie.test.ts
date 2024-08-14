@@ -14,7 +14,7 @@ describe('cookie', () => {
                 maxAge: 31536000,
                 secure: true,
                 path: '/',
-                sameSite: 'strict',
+                sameSite: 'none',
             });
         });
 
@@ -28,7 +28,7 @@ describe('cookie', () => {
                 maxAge: 31536000,
                 secure: true,
                 path: '/',
-                sameSite: 'strict',
+                sameSite: 'none',
             });
         });
 
@@ -42,7 +42,7 @@ describe('cookie', () => {
                 maxAge: Number.parseInt(process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION, 10),
                 secure: true,
                 path: '/',
-                sameSite: 'strict',
+                sameSite: 'none',
                 domain: process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DOMAIN,
             });
         });
@@ -76,7 +76,7 @@ describe('cookie', () => {
                 name: 'ct.preview_token',
                 path: '/',
                 secure: true,
-                sameSite: 'strict',
+                sameSite: 'none',
             });
         });
 
@@ -87,7 +87,7 @@ describe('cookie', () => {
                 name: 'ct.preview_token',
                 path: '/',
                 secure: true,
-                sameSite: 'strict',
+                sameSite: 'none',
             });
         });
 
@@ -100,7 +100,7 @@ describe('cookie', () => {
                 path: '/',
                 domain: process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_DOMAIN,
                 secure: true,
-                sameSite: 'strict',
+                sameSite: 'none',
             });
         });
     });
@@ -118,7 +118,7 @@ describe('cookie', () => {
                 maxAge: 604800,
                 secure: true,
                 path: '/',
-                sameSite: 'strict',
+                sameSite: 'none',
             });
         });
 
@@ -132,7 +132,7 @@ describe('cookie', () => {
                 maxAge: 604800,
                 secure: true,
                 path: '/',
-                sameSite: 'strict',
+                sameSite: 'none',
             });
         });
 
@@ -146,7 +146,7 @@ describe('cookie', () => {
                 maxAge: Number.parseInt(process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION, 10),
                 secure: true,
                 path: '/',
-                sameSite: 'strict',
+                sameSite: 'none',
                 domain: process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DOMAIN,
             });
         });

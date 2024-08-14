@@ -26,7 +26,7 @@ export function getClientIdCookieOptions(): CookieOptions {
         maxAge: parsedDuration,
         secure: true,
         path: '/',
-        sameSite: 'strict',
+        sameSite: 'none',
         ...(domain !== '' ? {domain: domain} : {}),
     };
 }
@@ -49,7 +49,7 @@ export function getUserTokenCookieOptions(): CookieOptions {
         maxAge: parsedDuration,
         secure: true,
         path: '/',
-        sameSite: 'strict',
+        sameSite: 'none',
         ...(domain !== '' ? {domain: domain} : {}),
     };
 }
@@ -61,7 +61,7 @@ export function getPreviewCookieOptions(): CookieOptions {
         name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME, 'ct.preview_token'),
         secure: true,
         path: '/',
-        sameSite: 'strict',
+        sameSite: 'none',
         ...(domain !== '' ? {domain: domain} : {}),
     };
 }

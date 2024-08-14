@@ -163,7 +163,7 @@ describe('middleware', () => {
                 name: 'ct.client_id',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 31536000,
             },
         },
@@ -177,7 +177,7 @@ describe('middleware', () => {
                 name: 'ct.client_id',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 31536000,
             },
         },
@@ -193,12 +193,12 @@ describe('middleware', () => {
                 name: 'custom_cid',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 60,
                 domain: 'croct.com',
             },
         },
-    }))('should assign a new client ID if none is present with %s', async (_, scenario) => {
+    }))('should assign a new client ID if None is present with %s', async (_, scenario) => {
         const request = createRequestMock();
         const response = createResponseMock();
 
@@ -298,7 +298,7 @@ describe('middleware', () => {
             maxAge: 31536000,
             secure: true,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             value: clientId,
         }]);
     });
@@ -328,7 +328,7 @@ describe('middleware', () => {
             maxAge: 31536000,
             secure: true,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             value: clientId,
         }]);
     });
@@ -402,7 +402,7 @@ describe('middleware', () => {
         expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             name: cookieName,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             secure: true,
             value: previewToken,
         }]);
@@ -525,7 +525,7 @@ describe('middleware', () => {
                 name: 'ct.user_token',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 604800,
             },
         },
@@ -539,7 +539,7 @@ describe('middleware', () => {
                 name: 'ct.user_token',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 604800,
             },
         },
@@ -553,12 +553,12 @@ describe('middleware', () => {
                 name: 'custom_ut',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 60,
                 domain: 'croct.com',
             },
         },
-    }))('should assign a new user token if none is present with %s', async (_, scenario) => {
+    }))('should assign a new user token if None is present with %s', async (_, scenario) => {
         const request = createRequestMock();
         const response = createResponseMock();
 
@@ -610,7 +610,7 @@ describe('middleware', () => {
             maxAge: 604800,
             secure: true,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             value: userToken,
         }]);
     });
@@ -948,7 +948,7 @@ describe('middleware', () => {
                 {
                     typ: 'JWT',
                     appId: getAppId(),
-                    alg: 'none',
+                    alg: 'None',
                 },
                 {
                     exp: requestToken.expiration,
@@ -997,7 +997,7 @@ describe('middleware', () => {
             maxAge: 604800,
             secure: true,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             value: newUserToken,
         }]);
     });
