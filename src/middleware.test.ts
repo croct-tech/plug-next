@@ -135,6 +135,7 @@ describe('middleware', () => {
         delete process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION;
 
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+        process.env.NODE_ENV = 'production';
     });
 
     afterEach(() => {
@@ -198,7 +199,7 @@ describe('middleware', () => {
                 domain: 'croct.com',
             },
         },
-    }))('should assign a new client ID if None is present with %s', async (_, scenario) => {
+    }))('should assign a new client ID if none is present with %s', async (_, scenario) => {
         const request = createRequestMock();
         const response = createResponseMock();
 
@@ -558,7 +559,7 @@ describe('middleware', () => {
                 domain: 'croct.com',
             },
         },
-    }))('should assign a new user token if None is present with %s', async (_, scenario) => {
+    }))('should assign a new user token if none is present with %s', async (_, scenario) => {
         const request = createRequestMock();
         const response = createResponseMock();
 
@@ -948,7 +949,7 @@ describe('middleware', () => {
                 {
                     typ: 'JWT',
                     appId: getAppId(),
-                    alg: 'None',
+                    alg: 'none',
                 },
                 {
                     exp: requestToken.expiration,
