@@ -24,10 +24,9 @@ export function getClientIdCookieOptions(): CookieOptions {
     return {
         name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_NAME, 'ct.client_id'),
         maxAge: parsedDuration,
-        secure: true,
         path: '/',
-        sameSite: 'strict',
         ...(domain !== '' ? {domain: domain} : {}),
+        ...getEnvOptions(),
     };
 }
 
@@ -47,10 +46,9 @@ export function getUserTokenCookieOptions(): CookieOptions {
     return {
         name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_NAME, 'ct.user_token'),
         maxAge: parsedDuration,
-        secure: true,
         path: '/',
-        sameSite: 'strict',
         ...(domain !== '' ? {domain: domain} : {}),
+        ...getEnvOptions(),
     };
 }
 
@@ -59,10 +57,20 @@ export function getPreviewCookieOptions(): CookieOptions {
 
     return {
         name: normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_NAME, 'ct.preview_token'),
-        secure: true,
         path: '/',
-        sameSite: 'strict',
         ...(domain !== '' ? {domain: domain} : {}),
+        ...getEnvOptions(),
+    };
+}
+
+function getEnvOptions(): Partial<CookieOptions> {
+    if (process.env.NODE_ENV !== 'production') {
+        return {};
+    }
+
+    return {
+        secure: true,
+        sameSite: 'none',
     };
 }
 

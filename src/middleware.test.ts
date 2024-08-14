@@ -135,6 +135,7 @@ describe('middleware', () => {
         delete process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION;
 
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+        process.env.NODE_ENV = 'production';
     });
 
     afterEach(() => {
@@ -163,7 +164,7 @@ describe('middleware', () => {
                 name: 'ct.client_id',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 31536000,
             },
         },
@@ -177,7 +178,7 @@ describe('middleware', () => {
                 name: 'ct.client_id',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 31536000,
             },
         },
@@ -193,7 +194,7 @@ describe('middleware', () => {
                 name: 'custom_cid',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 60,
                 domain: 'croct.com',
             },
@@ -298,7 +299,7 @@ describe('middleware', () => {
             maxAge: 31536000,
             secure: true,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             value: clientId,
         }]);
     });
@@ -328,7 +329,7 @@ describe('middleware', () => {
             maxAge: 31536000,
             secure: true,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             value: clientId,
         }]);
     });
@@ -402,7 +403,7 @@ describe('middleware', () => {
         expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             name: cookieName,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             secure: true,
             value: previewToken,
         }]);
@@ -525,7 +526,7 @@ describe('middleware', () => {
                 name: 'ct.user_token',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 604800,
             },
         },
@@ -539,7 +540,7 @@ describe('middleware', () => {
                 name: 'ct.user_token',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 604800,
             },
         },
@@ -553,7 +554,7 @@ describe('middleware', () => {
                 name: 'custom_ut',
                 secure: true,
                 path: '/',
-                sameSite: 'Strict',
+                sameSite: 'None',
                 maxAge: 60,
                 domain: 'croct.com',
             },
@@ -610,7 +611,7 @@ describe('middleware', () => {
             maxAge: 604800,
             secure: true,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             value: userToken,
         }]);
     });
@@ -997,7 +998,7 @@ describe('middleware', () => {
             maxAge: 604800,
             secure: true,
             path: '/',
-            sameSite: 'Strict',
+            sameSite: 'None',
             value: newUserToken,
         }]);
     });
