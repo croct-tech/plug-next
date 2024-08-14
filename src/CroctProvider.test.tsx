@@ -52,7 +52,6 @@ describe('<CroctProvider />', () => {
             {
                 appId: '00000000-0000-0000-0000-000000000000',
                 debug: false,
-                disableCidMirroring: true,
                 cookie: {
                     clientId: getClientIdCookieOptions(),
                     userToken: getUserTokenCookieOptions(),
@@ -70,7 +69,6 @@ describe('<CroctProvider />', () => {
         const config = {
             appId: '11111111-1111-1111-1111-111111111111',
             debug: false,
-            enableCidMirroring: true,
             cookie: {
                 clientId: {
                     name: 'custom-client-id',
@@ -93,7 +91,6 @@ describe('<CroctProvider />', () => {
             {
                 appId: config.appId,
                 debug: config.debug,
-                disableCidMirroring: !config.enableCidMirroring,
                 cookie: config.cookie,
             },
             expect.anything(),
