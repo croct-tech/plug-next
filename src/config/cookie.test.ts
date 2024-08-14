@@ -1,4 +1,3 @@
-import * as process from 'node:process';
 import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 
 describe('cookie', () => {
