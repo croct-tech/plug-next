@@ -2,14 +2,14 @@ import {issueToken} from '@/config/security';
 import {getUserTokenCookieOptions} from '@/config/cookie';
 import {getCookies, RouteContext, CookieAccessor} from '@/headers';
 
-export async function identify(userId: string, context?: RouteContext): Promise<void> {
+export async function identify(userId: string, route?: RouteContext): Promise<void> {
     let cookies: CookieAccessor;
 
     try {
-        cookies = getCookies(context);
+        cookies = getCookies(route);
     } catch {
         throw new Error(
-            'The identify() function requires a server-side context outside app routes. '
+            'identify() requires specifying the `route` parameter outside app routes. '
             + 'For help, see: https://croct.help/sdk/nextjs/identify-route-context',
         );
     }

@@ -25,7 +25,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
         if (route === undefined) {
             return Promise.reject(
                 new Error(
-                    'The fetchContent() function requires a server-side context outside app routes. '
+                    'fetchContent() requires specifying the `route` option outside app routes. '
                     + 'For help, see: https://croct.help/sdk/nextjs/fetch-content-route-context',
                 ),
             );

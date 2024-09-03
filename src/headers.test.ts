@@ -38,7 +38,7 @@ describe('getHeaders', () => {
             throw new Error('next/headers requires app router');
         });
 
-        expect(() => getHeaders()).toThrow('No request context available');
+        expect(() => getHeaders()).toThrow('No route context found.');
     });
 
     type RequestContextScenario = {
@@ -142,7 +142,7 @@ describe('getCookies', () => {
             throw new Error('next/headers requires app router');
         });
 
-        expect(() => getCookies()).toThrow('No request context available');
+        expect(() => getCookies()).toThrow('No route context found.');
     });
 
     type RequestContextScenario = {

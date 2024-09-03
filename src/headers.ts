@@ -31,20 +31,20 @@ export type RouteContext = {
     res: PartialResponse,
 };
 
-export function getHeaders(context?: RouteContext): HeaderReader {
+export function getHeaders(route?: RouteContext): HeaderReader {
     try {
         const {headers} = importNextHeaders();
 
         return headers();
     } catch {
-        if (context === undefined) {
-            throw new Error('No request context available');
+        if (route === undefined) {
+            throw new Error('No route context found.');
         }
     }
 
     return {
         get: (name: string): string|null => {
-            const requestHeaders = context.req.headers;
+            const requestHeaders = route.req.headers;
 
             if (isNextRequestHeaders(requestHeaders)) {
                 return requestHeaders.get(name);
@@ -65,31 +65,31 @@ export function getHeaders(context?: RouteContext): HeaderReader {
     };
 }
 
-export function getCookies(context?: RouteContext): CookieAccessor {
+export function getCookies(route?: RouteContext): CookieAccessor {
     try {
         const {cookies} = importNextHeaders();
 
         return cookies();
     } catch {
-        if (context === undefined) {
-            throw new Error('No request context available');
+        if (route === undefined) {
+            throw new Error('No route context found.');
         }
     }
 
     return {
         get: (name: string): {value: string}|undefined => {
-            const {res} = context;
+            const response = route.res;
 
             // First check if the cookie is set in the response
             // as it is the most recent value
-            if ('cookies' in res) {
-                const responseValue = res.cookies.get(name);
+            if ('cookies' in response) {
+                const responseValue = response.cookies.get(name);
 
                 if (responseValue !== undefined) {
                     return {value: responseValue.value};
                 }
             } else {
-                const responseValue = res.getHeader('Set-Cookie') ?? [];
+                const responseValue = response.getHeader('Set-Cookie') ?? [];
                 const lines = Array.isArray(responseValue) ? responseValue : [`${responseValue}`];
 
                 for (const line of lines) {
@@ -102,7 +102,7 @@ export function getCookies(context?: RouteContext): CookieAccessor {
             }
 
             // Next check if the cookie is set in the request
-            const requestCookies = context.req.cookies;
+            const requestCookies = route.req.cookies;
 
             if (isNextRequestCookies(requestCookies)) {
                 return requestCookies.get(name);
@@ -117,15 +117,15 @@ export function getCookies(context?: RouteContext): CookieAccessor {
             return undefined;
         },
         set: (name, value, options): void => {
-            const {res} = context;
+            const response = route.res;
 
-            if ('cookies' in res) {
-                res.cookies.set(name, value, options);
+            if ('cookies' in response) {
+                response.cookies.set(name, value, options);
 
                 return;
             }
 
-            const responseValue = res.getHeader('Set-Cookie') ?? [];
+            const responseValue = response.getHeader('Set-Cookie') ?? [];
             const previousValue = Array.isArray(responseValue) ? responseValue : [`${responseValue}`];
             const newValue = previousValue.flatMap(line => {
                 const parsedHeader = cookie.parse(line.split(';')[0]);
@@ -146,7 +146,7 @@ export function getCookies(context?: RouteContext): CookieAccessor {
                     : expires,
             }));
 
-            res.setHeader('Set-Cookie', newValue);
+            response.setHeader('Set-Cookie', newValue);
         },
     };
 }

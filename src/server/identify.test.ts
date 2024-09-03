@@ -92,7 +92,7 @@ describe('identify', () => {
         });
 
         await expect(() => identify('foo')).rejects.toThrow(
-            'The identify() function requires a server-side context outside app routes. '
+            'identify() requires specifying the `route` parameter outside app routes. '
             + 'For help, see: https://croct.help/sdk/nextjs/identify-route-context',
         );
     });

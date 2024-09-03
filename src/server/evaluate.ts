@@ -21,7 +21,7 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
         if (route === undefined) {
             return Promise.reject(
                 new Error(
-                    'The evaluate() function requires a server-side context outside app routes. '
+                    'evaluate() requires specifying the `route` option outside app routes. '
                     + 'For help, see: https://croct.help/sdk/nextjs/evaluate-route-context',
                 ),
             );
