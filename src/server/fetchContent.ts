@@ -8,15 +8,15 @@ import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getCookies, getHeaders, NextRequestContext} from '@/headers';
 
 export type FetchOptions<T extends JsonObject = JsonObject> = Omit<DynamicContentOptions<T>, 'apiKey' | 'appId'> & {
-    requestContext?: NextRequestContext,
+    route?: NextRequestContext,
 };
 
 export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     slotId: I,
     options: FetchOptions<SlotContent<I, C>> = {},
 ): Promise<SlotContent<I, C>> {
-    const {requestContext, ...rest} = options;
-    const context = getRequestContext(getHeaders(requestContext), getCookies(requestContext));
+    const {route, ...rest} = options;
+    const context = getRequestContext(getHeaders(route), getCookies(route));
     const promise = loadContent<I, C>(slotId, {
         apiKey: getApiKey(),
         clientIp: context.clientIp ?? '127.0.0.1',

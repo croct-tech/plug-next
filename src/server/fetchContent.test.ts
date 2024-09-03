@@ -225,7 +225,7 @@ describe('fetchContent', () => {
         });
 
         await fetchContent('slot-id', {
-            requestContext: context,
+            route: context,
         });
 
         expect(getHeaders).toHaveBeenCalledWith(context);

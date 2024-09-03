@@ -8,12 +8,12 @@ import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getCookies, getHeaders, isAppRouter, NextRequestContext} from '@/headers';
 
 export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey' | 'appId'> & {
-    requestContext?: NextRequestContext,
+    route?: NextRequestContext,
 };
 
 export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
-    const {requestContext, ...rest} = options;
-    const context = getRequestContext(getHeaders(requestContext), getCookies(requestContext));
+    const {route, ...rest} = options;
+    const context = getRequestContext(getHeaders(route), getCookies(route));
 
     return executeQuery<T>(query, {
         apiKey: getApiKey(),

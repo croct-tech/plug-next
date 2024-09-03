@@ -187,7 +187,7 @@ describe('evaluation', () => {
             jest.mocked(getRequestContext).mockReturnValue(request);
             jest.mocked(executeQuery).mockResolvedValue(true);
 
-            await expect(evaluate('true', {requestContext: context})).resolves.toBe(true);
+            await expect(evaluate('true', {route: context})).resolves.toBe(true);
 
             expect(getHeaders).toHaveBeenCalledWith(context);
             expect(getCookies).toHaveBeenCalledWith(context);
