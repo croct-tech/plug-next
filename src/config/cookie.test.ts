@@ -1,3 +1,4 @@
+import process from 'node:process';
 import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 
 describe('cookie', () => {
@@ -7,7 +8,7 @@ describe('cookie', () => {
             delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DOMAIN;
             delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_NAME;
 
-            process.env.NODE_ENV = 'production';
+            Object.assign(process.env, {NODE_ENV: 'production'});
         });
 
         it.each([
@@ -15,7 +16,7 @@ describe('cookie', () => {
             'development',
             'test',
         ])('should return default options for %s environment', env => {
-            process.env.NODE_ENV = env;
+            Object.assign(process.env, {NODE_ENV: env});
 
             expect(getClientIdCookieOptions()).toEqual(
                 env === 'production'
