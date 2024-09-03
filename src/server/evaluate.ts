@@ -3,17 +3,32 @@ import type {JsonValue} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {getApiKey} from '@/config/security';
-import {getRequestContext} from '@/config/context';
+import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
-import {getCookies, getHeaders, isAppRouter, NextRequestContext} from '@/headers';
+import {isAppRouter, RouteContext} from '@/headers';
 
 export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey' | 'appId'> & {
-    route?: NextRequestContext,
+    route?: RouteContext,
 };
 
 export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
     const {route, ...rest} = options;
-    const context = getRequestContext(getHeaders(route), getCookies(route));
+    let context: RequestContext;
+
+    try {
+        context = resolveRequestContext(route);
+    } catch (error) {
+        if (route === undefined) {
+            return Promise.reject(
+                new Error(
+                    'The evaluate() function requires a server-side context outside app routes. '
+                    + 'For help, see: https://croct.help/sdk/nextjs/evaluate-route-context',
+                ),
+            );
+        }
+
+        return Promise.reject(error);
+    }
 
     return executeQuery<T>(query, {
         apiKey: getApiKey(),

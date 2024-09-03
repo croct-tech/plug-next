@@ -3,12 +3,12 @@ import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {getApiKey} from '@/config/security';
-import {getRequestContext} from '@/config/context';
+import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
-import {getCookies, getHeaders, NextRequestContext} from '@/headers';
+import {RouteContext} from '@/headers';
 
 export type FetchOptions<T extends JsonObject = JsonObject> = Omit<DynamicContentOptions<T>, 'apiKey' | 'appId'> & {
-    route?: NextRequestContext,
+    route?: RouteContext,
 };
 
 export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
@@ -16,7 +16,24 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     options: FetchOptions<SlotContent<I, C>> = {},
 ): Promise<SlotContent<I, C>> {
     const {route, ...rest} = options;
-    const context = getRequestContext(getHeaders(route), getCookies(route));
+
+    let context: RequestContext;
+
+    try {
+        context = resolveRequestContext(route);
+    } catch (error) {
+        if (route === undefined) {
+            return Promise.reject(
+                new Error(
+                    'The fetchContent() function requires a server-side context outside app routes. '
+                    + 'For help, see: https://croct.help/sdk/nextjs/fetch-content-route-context',
+                ),
+            );
+        }
+
+        return Promise.reject(error);
+    }
+
     const promise = loadContent<I, C>(slotId, {
         apiKey: getApiKey(),
         clientIp: context.clientIp ?? '127.0.0.1',

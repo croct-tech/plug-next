@@ -26,12 +26,12 @@ export type PartialResponse = Pick<NextResponse, 'headers' | 'cookies'>
     | Pick<NextApiResponse, 'getHeader' | 'setHeader'>
     | Pick<ServerResponse, 'getHeader' | 'setHeader'>;
 
-export type NextRequestContext = {
+export type RouteContext = {
     req: PartialRequest,
     res: PartialResponse,
 };
 
-export function getHeaders(context?: NextRequestContext): HeaderReader {
+export function getHeaders(context?: RouteContext): HeaderReader {
     try {
         const {headers} = importNextHeaders();
 
@@ -65,7 +65,7 @@ export function getHeaders(context?: NextRequestContext): HeaderReader {
     };
 }
 
-export function getCookies(context?: NextRequestContext): CookieAccessor {
+export function getCookies(context?: RouteContext): CookieAccessor {
     try {
         const {cookies} = importNextHeaders();
 

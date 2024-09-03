@@ -1,8 +1,8 @@
 import {getUserTokenCookieOptions} from '@/config/cookie';
 import {issueToken} from '@/config/security';
-import {CookieAccessor, getCookies, NextRequestContext} from '@/headers';
+import {CookieAccessor, getCookies, RouteContext} from '@/headers';
 
-export async function anonymize(context?: NextRequestContext): Promise<void> {
+export async function anonymize(context?: RouteContext): Promise<void> {
     let cookies: CookieAccessor;
 
     try {
@@ -10,7 +10,7 @@ export async function anonymize(context?: NextRequestContext): Promise<void> {
     } catch {
         throw new Error(
             'The anonymize() function requires a server-side context outside app routes. '
-            + 'For help, see: https://croct.help/sdk/nextjs/anonymize-missing-context',
+            + 'For help, see: https://croct.help/sdk/nextjs/anonymize-route-context',
         );
     }
 

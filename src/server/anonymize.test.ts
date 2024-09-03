@@ -3,7 +3,7 @@ import {Token} from '@croct/sdk/token';
 import type {NextRequest, NextResponse} from 'next/server';
 import {issueToken} from '@/config/security';
 import {anonymize} from '@/server/anonymize';
-import {getCookies, NextRequestContext} from '@/headers';
+import {getCookies, RouteContext} from '@/headers';
 
 jest.mock(
     '@/config/security',
@@ -67,7 +67,7 @@ describe('anonymize', () => {
 
         jest.mocked(issueToken).mockResolvedValue(token);
 
-        const context: NextRequestContext = {
+        const context: RouteContext = {
             req: {} as NextRequest,
             res: {} as NextResponse,
         };
@@ -85,14 +85,14 @@ describe('anonymize', () => {
         });
     });
 
-    it('should report an error if the request context is missing', async () => {
+    it('should report an error if the route context is missing', async () => {
         jest.mocked(cookies).mockImplementation(() => {
             throw new Error('next/headers requires app router');
         });
 
         await expect(anonymize).rejects.toThrow(
             'The anonymize() function requires a server-side context outside app routes. '
-            + 'For help, see: https://croct.help/sdk/nextjs/anonymize-missing-context',
+            + 'For help, see: https://croct.help/sdk/nextjs/anonymize-route-context',
         );
     });
 });

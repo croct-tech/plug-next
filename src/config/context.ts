@@ -1,7 +1,7 @@
 import {Token} from '@croct/sdk/token';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
-import {CookieReader, HeaderReader} from '@/headers';
+import {CookieReader, getCookies, getHeaders, HeaderReader, RouteContext} from '@/headers';
 
 export type RequestContext = {
     clientId: string,
@@ -12,6 +12,10 @@ export type RequestContext = {
     userToken?: string,
     previewToken?: string,
 };
+
+export function resolveRequestContext(route?: RouteContext): RequestContext {
+    return getRequestContext(getHeaders(route), getCookies(route));
+}
 
 export function getRequestContext(headers: HeaderReader, cookies: CookieReader): RequestContext {
     const clientId = headers.get(Header.CLIENT_ID);

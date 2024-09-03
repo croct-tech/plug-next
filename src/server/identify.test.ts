@@ -3,7 +3,7 @@ import {Token} from '@croct/sdk/token';
 import type {NextRequest, NextResponse} from 'next/server';
 import {issueToken} from '@/config/security';
 import {identify} from '@/server/identify';
-import {getCookies, NextRequestContext} from '@/headers';
+import {getCookies, RouteContext} from '@/headers';
 
 jest.mock(
     '@/config/security',
@@ -68,7 +68,7 @@ describe('identify', () => {
 
         jest.mocked(issueToken).mockResolvedValue(token);
 
-        const context: NextRequestContext = {
+        const context: RouteContext = {
             req: {} as NextRequest,
             res: {} as NextResponse,
         };
@@ -86,14 +86,14 @@ describe('identify', () => {
         });
     });
 
-    it('should report an error if the request context is missing', async () => {
+    it('should report an error if the route context is missing', async () => {
         jest.mocked(cookies).mockImplementation(() => {
             throw new Error('next/headers requires app router');
         });
 
         await expect(() => identify('foo')).rejects.toThrow(
             'The identify() function requires a server-side context outside app routes. '
-            + 'For help, see: https://croct.help/sdk/nextjs/identify-missing-context',
+            + 'For help, see: https://croct.help/sdk/nextjs/identify-route-context',
         );
     });
 });
