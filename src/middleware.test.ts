@@ -3,6 +3,7 @@ import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
 import {v4 as uuid} from 'uuid';
 import {ApiKey} from '@croct/sdk/apiKey';
+import * as process from 'node:process';
 import {Header, QueryParameter} from '@/config/http';
 import {config, withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
@@ -135,11 +136,13 @@ describe('middleware', () => {
         delete process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION;
 
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
-        process.env.NODE_ENV = 'production';
+
+        Object.assign(process.env, {NODE_ENV: 'production'});
     });
 
     afterEach(() => {
-        process.env = {...ENV_VARS};
+        Object.assign(process.env, ENV_VARS);
+
         jest.useRealTimers();
     });
 

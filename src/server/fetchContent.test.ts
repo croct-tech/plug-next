@@ -3,17 +3,12 @@ import {fetchContent as loadContent, FetchOptions as ResolvedFetchOptions} from 
 import {FetchResponse} from '@croct/plug/plug';
 import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
+import type {NextRequest, NextResponse} from 'next/server';
 import {fetchContent, FetchOptions} from './fetchContent';
-import {getRequestContext, RequestContext} from '@/config/context';
+import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
-
-jest.mock(
-    'server-only',
-    () => ({
-        __esModule: true,
-    }),
-);
+import {RouteContext} from '@/headers';
 
 jest.mock(
     'next/headers',
@@ -47,7 +42,7 @@ jest.mock(
     () => ({
         __esModule: true,
         ...jest.requireActual('@/config/context'),
-        getRequestContext: jest.fn(),
+        resolveRequestContext: jest.fn(),
     }),
 );
 
@@ -77,7 +72,7 @@ describe('fetchContent', () => {
     } satisfies RequestContext;
 
     afterEach(() => {
-        jest.mocked(getRequestContext).mockReset();
+        jest.mocked(resolveRequestContext).mockReset();
         jest.mocked(getDefaultFetchTimeout).mockReset();
         jest.mocked(loadContent).mockReset();
     });
@@ -173,7 +168,7 @@ describe('fetchContent', () => {
             },
         };
 
-        jest.mocked(getRequestContext).mockReturnValue(scenario.request);
+        jest.mocked(resolveRequestContext).mockReturnValue(scenario.request);
         jest.mocked(loadContent).mockResolvedValue(content);
 
         await expect(fetchContent<any, any>(slotId, scenario.options)).resolves.toEqual(content.content);
@@ -190,7 +185,7 @@ describe('fetchContent', () => {
             },
         };
 
-        jest.mocked(getRequestContext).mockReturnValue({
+        jest.mocked(resolveRequestContext).mockReturnValue({
             clientId: request.clientId,
         });
 
@@ -205,6 +200,52 @@ describe('fetchContent', () => {
         }));
     });
 
+    it('should forward the route context', async () => {
+        const route: RouteContext = {
+            req: {} as NextRequest,
+            res: {} as NextResponse,
+        };
+
+        jest.mocked(resolveRequestContext).mockReturnValue(request);
+        jest.mocked(loadContent).mockResolvedValue({
+            content: {
+                _component: 'component',
+            },
+        });
+
+        await fetchContent('slot-id', {
+            route: route,
+        });
+
+        expect(resolveRequestContext).toHaveBeenCalledWith(route);
+    });
+
+    it('should report an error if the route context is missing', async () => {
+        jest.mocked(resolveRequestContext).mockImplementation(() => {
+            throw new Error('next/headers requires app router');
+        });
+
+        await expect(fetchContent('slot-id')).rejects.toThrow(
+            'fetchContent() requires specifying the `route` option outside app routes. '
+            + 'For help, see: https://croct.help/sdk/nextjs/fetch-content-route-context',
+        );
+    });
+
+    it('should report unexpected errors resolving the context', async () => {
+        const error = new Error('unexpected error');
+
+        jest.mocked(resolveRequestContext).mockImplementation(() => {
+            throw error;
+        });
+
+        const route: RouteContext = {
+            req: {} as NextRequest,
+            res: {} as NextResponse,
+        };
+
+        await expect(fetchContent('true', {route: route})).rejects.toBe(error);
+    });
+
     it('should override the default fetch timeout', async () => {
         const defaultTimeout = 1000;
         const timeout = 2000;
@@ -215,7 +256,7 @@ describe('fetchContent', () => {
             },
         };
 
-        jest.mocked(getRequestContext).mockReturnValue({
+        jest.mocked(resolveRequestContext).mockReturnValue({
             clientId: request.clientId,
         });
 
@@ -244,7 +285,7 @@ describe('fetchContent', () => {
             },
         });
 
-        jest.mocked(getRequestContext).mockReturnValue(request);
+        jest.mocked(resolveRequestContext).mockReturnValue(request);
 
         await fetchContent<any, any>('slot-id');
 

@@ -1,38 +1,40 @@
 import type {cookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
-import {getRequestContext, RequestContext} from '@/config/context';
+import {getRequestContext, RequestContext, resolveRequestContext} from '@/config/context';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
-
-jest.mock(
-    'server-only',
-    () => ({
-        __esModule: true,
-    }),
-);
+import {getCookies, getHeaders, PartialRequest, PartialResponse, RouteContext} from '@/headers';
 
 type ReadonlyCookies = ReturnType<typeof cookies>;
 
+function createCookieJar(cookies: Record<string, string> = {}): ReadonlyCookies {
+    const jar: Record<string, string> = {...cookies};
+
+    return {
+        get: jest.fn((name: string) => {
+            if (jar[name] === undefined) {
+                return undefined;
+            }
+
+            return {
+                name: name,
+                value: jar[name],
+            };
+        }),
+        has: jest.fn((name: string) => jar[name] !== undefined),
+    } as Partial<ReadonlyCookies> as ReadonlyCookies;
+}
+
+jest.mock(
+    '../headers',
+    () => ({
+        getCookies: jest.fn(),
+        getHeaders: jest.fn(),
+    }),
+);
+
 describe('getRequestContext', () => {
     const appId = '00000000-0000-0000-0000-000000000000';
-
-    function createCookieJar(cookies: Record<string, string> = {}): ReadonlyCookies {
-        const jar: Record<string, string> = {...cookies};
-
-        return {
-            get: jest.fn((name: string) => {
-                if (jar[name] === undefined) {
-                    return undefined;
-                }
-
-                return {
-                    name: name,
-                    value: jar[name],
-                };
-            }),
-            has: jest.fn((name: string) => jar[name] !== undefined),
-        } as Partial<ReadonlyCookies> as ReadonlyCookies;
-    }
 
     it('should throw an error when the client ID is missing', () => {
         expect(() => getRequestContext(new Headers(), createCookieJar()))
@@ -140,5 +142,41 @@ describe('getRequestContext', () => {
         const context = getRequestContext(headers, cookies);
 
         expect(context.userToken).toEqual(newToken.toString());
+    });
+});
+
+describe('resolveRequestContext', () => {
+    it('should return the request context', () => {
+        const headers = new Headers();
+        const cookies = createCookieJar();
+
+        const route: RouteContext = {
+            req: {} as PartialRequest,
+            res: {} as PartialResponse,
+        };
+
+        const request = {
+            clientId: '00000000-0000-0000-0000-000000000000',
+            uri: 'http://localhost:3000',
+            clientAgent: 'Mozilla/5.0',
+            referrer: 'http://referrer.com',
+            clientIp: '192.0.0.1',
+            previewToken: 'ct.preview_token',
+        } satisfies RequestContext;
+
+        headers.set(Header.CLIENT_ID, request.clientId);
+        headers.set(Header.REQUEST_URI, request.uri);
+        headers.set(Header.USER_AGENT, request.clientAgent);
+        headers.set(Header.REFERRER, request.referrer);
+        headers.set(Header.CLIENT_IP, request.clientIp);
+        headers.set(Header.PREVIEW_TOKEN, request.previewToken);
+
+        jest.mocked(getHeaders).mockReturnValue(headers);
+        jest.mocked(getCookies).mockReturnValue(cookies);
+
+        expect(resolveRequestContext(route)).toEqual(request);
+
+        expect(getHeaders).toHaveBeenCalledWith(route);
+        expect(getCookies).toHaveBeenCalledWith(route);
     });
 });

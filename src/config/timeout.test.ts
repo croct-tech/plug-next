@@ -1,3 +1,4 @@
+import process from 'node:process';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 
 describe('getDefaultFetchTimeout', () => {
@@ -6,7 +7,7 @@ describe('getDefaultFetchTimeout', () => {
     beforeEach(() => {
         delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT;
 
-        process.env.NODE_ENV = 'test';
+        Object.assign(process.env, {NODE_ENV: 'test'});
     });
 
     afterEach(() => {
@@ -18,7 +19,7 @@ describe('getDefaultFetchTimeout', () => {
     });
 
     it('should return the default value when the environment variable is missing and environment is production', () => {
-        process.env.NODE_ENV = 'production';
+        Object.assign(process.env, {NODE_ENV: 'production'});
 
         expect(getDefaultFetchTimeout()).toBe(2000);
     });

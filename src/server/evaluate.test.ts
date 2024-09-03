@@ -2,24 +2,20 @@
 import {evaluate as executeQuery, EvaluationOptions as ResolvedEvaluationOptions} from '@croct/plug-react/api';
 import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
+import {headers} from 'next/headers';
+import {NextRequest, NextResponse} from 'next/server';
 import {cql, evaluate, EvaluationOptions} from './evaluate';
-import {getRequestContext, RequestContext} from '@/config/context';
+import {resolveRequestContext, RequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
-
-jest.mock(
-    'server-only',
-    () => ({
-        __esModule: true,
-    }),
-);
+import {RouteContext} from '@/headers';
 
 jest.mock(
     'next/headers',
     () => ({
         __esModule: true,
-        headers: jest.fn(() => new Headers()),
-        cookies: jest.fn(() => ({})),
+        headers: jest.fn(),
+        cookies: jest.fn(),
     }),
 );
 
@@ -46,7 +42,7 @@ jest.mock(
     () => ({
         __esModule: true,
         ...jest.requireActual('@/config/context'),
-        getRequestContext: jest.fn(),
+        resolveRequestContext: jest.fn(),
     }),
 );
 
@@ -70,7 +66,8 @@ describe('evaluation', () => {
     } satisfies RequestContext;
 
     afterEach(() => {
-        jest.mocked(getRequestContext).mockReset();
+        jest.mocked(headers).mockReset();
+        jest.mocked(resolveRequestContext).mockReset();
         jest.mocked(executeQuery).mockReset();
         jest.mocked(getDefaultFetchTimeout).mockReset();
     });
@@ -158,16 +155,56 @@ describe('evaluation', () => {
                     logger: expect.any(FilteredLogger),
                 },
             },
-        }))('should forward the call %s to the fetchContent function', async (_, scenario) => {
+        }))('should forward the call %s to the evaluate function', async (_, scenario) => {
             const query = 'true';
             const result = true;
 
-            jest.mocked(getRequestContext).mockReturnValue(scenario.request);
+            jest.mocked(resolveRequestContext).mockReturnValue(scenario.request);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
             await expect(evaluate(query, scenario.options)).resolves.toBe(result);
 
             expect(executeQuery).toHaveBeenCalledWith(query, scenario.resolvedOptions);
+        });
+
+        it('should forward the route context', async () => {
+            const route: RouteContext = {
+                req: {} as NextRequest,
+                res: {} as NextResponse,
+            };
+
+            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(executeQuery).mockResolvedValue(true);
+
+            await expect(evaluate('true', {route: route})).resolves.toBe(true);
+
+            expect(resolveRequestContext).toHaveBeenCalledWith(route);
+        });
+
+        it('should report an error if the route context is missing', async () => {
+            jest.mocked(resolveRequestContext).mockImplementation(() => {
+                throw new Error('next/headers requires app router');
+            });
+
+            await expect(evaluate('true')).rejects.toThrow(
+                'evaluate() requires specifying the `route` option outside app routes. '
+                + 'For help, see: https://croct.help/sdk/nextjs/evaluate-route-context',
+            );
+        });
+
+        it('should report unexpected errors resolving the context', async () => {
+            const error = new Error('unexpected error');
+
+            jest.mocked(resolveRequestContext).mockImplementation(() => {
+                throw error;
+            });
+
+            const route: RouteContext = {
+                req: {} as NextRequest,
+                res: {} as NextResponse,
+            };
+
+            await expect(evaluate('true', {route: route})).rejects.toBe(error);
         });
 
         it('should log warnings and errors', async () => {
@@ -177,7 +214,7 @@ describe('evaluation', () => {
             jest.spyOn(console, 'info').mockImplementation();
 
             jest.mocked(executeQuery).mockResolvedValue(true);
-            jest.mocked(getRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockReturnValue(request);
 
             await evaluate('true');
 
@@ -201,7 +238,7 @@ describe('evaluation', () => {
             const result = true;
             const defaultTimeout = 1000;
 
-            jest.mocked(getRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockReturnValue(request);
             jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
@@ -218,7 +255,7 @@ describe('evaluation', () => {
             const defaultTimeout = 1000;
             const timeout = 2000;
 
-            jest.mocked(getRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockReturnValue(request);
             jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
@@ -245,10 +282,25 @@ describe('evaluation', () => {
     });
 
     describe('cql', () => {
+        beforeEach(() => {
+            jest.mocked(headers).mockReset();
+        });
+
+        it('should throw an error if used outside the App Router', async () => {
+            jest.mocked(headers).mockImplementation(() => {
+                throw new Error('next/headers requires app router');
+            });
+
+            await expect(cql`true`).rejects.toThrow(
+                'The cql tag function can only be used with App Router. '
+                + 'For help, see https://croct.help/sdk/nextjs/cql-missing-context',
+            );
+        });
+
         it('should evaluate a query with no arguments', async () => {
             const result = true;
 
-            jest.mocked(getRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockReturnValue(request);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
             await expect(cql`true`).resolves.toBe(result);
@@ -274,7 +326,7 @@ describe('evaluation', () => {
         it('should evaluate a query with arguments', async () => {
             const result = true;
 
-            jest.mocked(getRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockReturnValue(request);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
             const variable = 'variable';

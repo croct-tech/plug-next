@@ -1,41 +1,57 @@
-import 'server-only';
-
 import {evaluate as executeQuery, EvaluationOptions as BaseOptions} from '@croct/plug-react/api';
 import type {JsonValue} from '@croct/plug-react';
-import {cookies, headers} from 'next/headers';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {getApiKey} from '@/config/security';
-import {getRequestContext} from '@/config/context';
+import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
+import {isAppRouter, RouteContext} from '@/headers';
 
-export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey' | 'appId'>;
+export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey' | 'appId'> & {
+    route?: RouteContext,
+};
 
 export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
-    const request = getRequestContext(headers(), cookies());
+    const {route, ...rest} = options;
+    let context: RequestContext;
+
+    try {
+        context = resolveRequestContext(route);
+    } catch (error) {
+        if (route === undefined) {
+            return Promise.reject(
+                new Error(
+                    'evaluate() requires specifying the `route` option outside app routes. '
+                    + 'For help, see: https://croct.help/sdk/nextjs/evaluate-route-context',
+                ),
+            );
+        }
+
+        return Promise.reject(error);
+    }
 
     return executeQuery<T>(query, {
         apiKey: getApiKey(),
-        clientIp: request.clientIp ?? '127.0.0.1',
-        ...(request.previewToken !== undefined && {previewToken: request.previewToken}),
-        ...(request.userToken !== undefined && {userToken: request.userToken}),
-        ...(request.clientId !== undefined && {clientId: request.clientId}),
-        ...(request.clientAgent !== undefined && {clientAgent: request.clientAgent}),
+        clientIp: context.clientIp ?? '127.0.0.1',
+        ...(context.previewToken !== undefined && {previewToken: context.previewToken}),
+        ...(context.userToken !== undefined && {userToken: context.userToken}),
+        ...(context.clientId !== undefined && {clientId: context.clientId}),
+        ...(context.clientAgent !== undefined && {clientAgent: context.clientAgent}),
         timeout: getDefaultFetchTimeout(),
         extra: {
             cache: 'no-store',
         },
-        ...options,
-        logger: options.logger ?? FilteredLogger.include(new ConsoleLogger(), ['warn', 'error']),
-        ...(request.uri !== undefined
+        ...rest,
+        logger: rest.logger ?? FilteredLogger.include(new ConsoleLogger(), ['warn', 'error']),
+        ...(context.uri !== undefined
             ? {
                 context: {
                     page: {
-                        url: request.uri,
-                        ...(request.referrer !== null ? {referrer: request.referrer} : {}),
-                        ...options.context?.page,
+                        url: context.uri,
+                        ...(context.referrer !== null ? {referrer: context.referrer} : {}),
+                        ...rest.context?.page,
                     },
-                    ...options.context,
+                    ...rest.context,
                 },
             }
             : {}
@@ -44,6 +60,15 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
 }
 
 export function cql<T extends JsonValue>(fragments: TemplateStringsArray, ...args: JsonValue[]): Promise<T> {
+    if (!isAppRouter()) {
+        return Promise.reject(
+            new Error(
+                'The cql tag function can only be used with App Router. '
+                + 'For help, see https://croct.help/sdk/nextjs/cql-missing-context',
+            ),
+        );
+    }
+
     const {query, variables} = buildQuery(fragments, args);
 
     return evaluate<T>(
