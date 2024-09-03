@@ -1,5 +1,3 @@
-import 'server-only';
-
 import {evaluate as executeQuery, EvaluationOptions as BaseOptions} from '@croct/plug-react/api';
 import type {JsonValue} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';

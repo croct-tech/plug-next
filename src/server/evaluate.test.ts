@@ -11,13 +11,6 @@ import {getApiKey} from '@/config/security';
 import {getCookies, getHeaders, NextRequestContext} from '@/headers';
 
 jest.mock(
-    'server-only',
-    () => ({
-        __esModule: true,
-    }),
-);
-
-jest.mock(
     'next/headers',
     () => ({
         __esModule: true,

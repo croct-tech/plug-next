@@ -1,5 +1,3 @@
-import 'server-only';
-
 import {DynamicContentOptions, fetchContent as loadContent} from '@croct/plug-react/api';
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';

@@ -4,13 +4,6 @@ import {getRequestContext, RequestContext} from '@/config/context';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
 
-jest.mock(
-    'server-only',
-    () => ({
-        __esModule: true,
-    }),
-);
-
 type ReadonlyCookies = ReturnType<typeof cookies>;
 
 describe('getRequestContext', () => {
