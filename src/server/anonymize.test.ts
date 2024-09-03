@@ -1,7 +1,9 @@
 import {cookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
+import type {NextRequest, NextResponse} from 'next/server';
 import {issueToken} from '@/config/security';
 import {anonymize} from '@/server/anonymize';
+import {getCookies, NextRequestContext} from '@/headers';
 
 jest.mock(
     '@/config/security',
@@ -32,41 +34,65 @@ jest.mock(
 
 jest.mock(
     'next/headers',
-    () => {
-        const methods = {
-            set: jest.fn(),
-        };
-
-        return {
-            __esModule: true,
-            ...jest.requireActual('next/headers'),
-            cookies: jest.fn(() => methods),
-        };
-    },
+    () => ({
+        __esModule: true,
+        ...jest.requireActual('next/headers'),
+        cookies: jest.fn(),
+    }),
 );
+
+jest.mock('@/headers', () => {
+    const original = jest.requireActual('@/headers');
+
+    return {
+        __esModule: true,
+        ...original,
+        getCookies: jest.fn(original.getCookies),
+    };
+});
 
 describe('anonymize', () => {
     afterEach(() => {
-        jest.mocked(cookies().set).mockClear();
+        jest.mocked(cookies).mockReset();
     });
 
     it('should set a token in the cookie', async () => {
         const token = Token.issue('00000000-0000-0000-0000-000000000001');
 
+        const set = jest.fn();
+
+        jest.mocked(cookies).mockReturnValue(
+            {set: set} as Partial<ReturnType<typeof cookies>> as ReturnType<typeof cookies>,
+        );
+
         jest.mocked(issueToken).mockResolvedValue(token);
 
-        await expect(anonymize()).resolves.toBeUndefined();
+        const context: NextRequestContext = {
+            req: {} as NextRequest,
+            res: {} as NextResponse,
+        };
 
-        const jar = cookies();
+        await expect(anonymize(context)).resolves.toBeUndefined();
 
-        expect(jar.set).toHaveBeenCalledWith({
-            name: 'croct',
+        expect(getCookies).toHaveBeenCalledWith(context);
+
+        expect(set).toHaveBeenCalledWith('croct', token.toString(), {
             maxAge: 86400,
             path: '/',
             domain: undefined,
             secure: false,
             sameSite: 'lax',
-            value: token.toString(),
         });
+    });
+
+    it('should report an error if the request context is missing', async () => {
+        jest.mocked(cookies).mockImplementation(() => {
+            throw new Error('next/headers requires app router');
+        });
+
+        await expect(anonymize).rejects.toThrow(
+            'The anonymize() function requires a server-side context outside app routes. '
+            + 'For help, see: https://croct.help/sdk/nextjs/anonymize-missing-context',
+        );
     });
 });

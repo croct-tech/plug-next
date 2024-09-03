@@ -1,10 +1,7 @@
-import type {cookies, headers} from 'next/headers';
 import {Token} from '@croct/sdk/token';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
-
-type ReadonlyHeaders = ReturnType<typeof headers>;
-type ReadonlyCookies = ReturnType<typeof cookies>;
+import {CookieReader, HeaderReader} from '@/headers';
 
 export type RequestContext = {
     clientId: string,
@@ -16,7 +13,7 @@ export type RequestContext = {
     previewToken?: string,
 };
 
-export function getRequestContext(headers: ReadonlyHeaders, cookies: ReadonlyCookies): RequestContext {
+export function getRequestContext(headers: HeaderReader, cookies: CookieReader): RequestContext {
     const clientId = headers.get(Header.CLIENT_ID);
 
     if (clientId === null) {
@@ -75,7 +72,7 @@ export function getRequestContext(headers: ReadonlyHeaders, cookies: ReadonlyCoo
  * @param headers The request headers.
  * @param cookies The request cookies.
  */
-function getUserToken(headers: ReadonlyHeaders, cookies: ReadonlyCookies): string|null {
+function getUserToken(headers: HeaderReader, cookies: CookieReader): string|null {
     const {name: cookieName} = getUserTokenCookieOptions();
     const cookie = cookies.get(cookieName);
     const cookieValue = cookie === undefined || cookie.value === '' ? null : cookie.value;

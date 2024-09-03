@@ -3,10 +3,12 @@ import {fetchContent as loadContent, FetchOptions as ResolvedFetchOptions} from 
 import {FetchResponse} from '@croct/plug/plug';
 import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
+import type {NextRequest, NextResponse} from 'next/server';
 import {fetchContent, FetchOptions} from './fetchContent';
 import {getRequestContext, RequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
+import {getCookies, getHeaders, NextRequestContext} from '@/headers';
 
 jest.mock(
     'server-only',
@@ -59,6 +61,17 @@ jest.mock(
         getDefaultFetchTimeout: jest.fn(),
     }),
 );
+
+jest.mock('@/headers', () => {
+    const original = jest.requireActual('@/headers');
+
+    return {
+        __esModule: true,
+        ...original,
+        getHeaders: jest.fn(original.getHeaders),
+        getCookies: jest.fn(original.getCookies),
+    };
+});
 
 describe('fetchContent', () => {
     const apiKey = getApiKey().getIdentifier();
@@ -203,6 +216,27 @@ describe('fetchContent', () => {
         expect(loadContent).toHaveBeenCalledWith(slotId, expect.objectContaining({
             timeout: defaultTimeout,
         }));
+    });
+
+    it('should forward the request context', async () => {
+        const context: NextRequestContext = {
+            req: {} as NextRequest,
+            res: {} as NextResponse,
+        };
+
+        jest.mocked(getRequestContext).mockReturnValue(request);
+        jest.mocked(loadContent).mockResolvedValue({
+            content: {
+                _component: 'component',
+            },
+        });
+
+        await fetchContent('slot-id', {
+            requestContext: context,
+        });
+
+        expect(getHeaders).toHaveBeenCalledWith(context);
+        expect(getCookies).toHaveBeenCalledWith(context);
     });
 
     it('should override the default fetch timeout', async () => {

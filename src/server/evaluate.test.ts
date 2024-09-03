@@ -2,10 +2,13 @@
 import {evaluate as executeQuery, EvaluationOptions as ResolvedEvaluationOptions} from '@croct/plug-react/api';
 import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
+import {headers} from 'next/headers';
+import {NextRequest, NextResponse} from 'next/server';
 import {cql, evaluate, EvaluationOptions} from './evaluate';
 import {getRequestContext, RequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
+import {getCookies, getHeaders, NextRequestContext} from '@/headers';
 
 jest.mock(
     'server-only',
@@ -18,8 +21,8 @@ jest.mock(
     'next/headers',
     () => ({
         __esModule: true,
-        headers: jest.fn(() => new Headers()),
-        cookies: jest.fn(() => ({})),
+        headers: jest.fn(),
+        cookies: jest.fn(),
     }),
 );
 
@@ -59,6 +62,17 @@ jest.mock(
     }),
 );
 
+jest.mock('@/headers', () => {
+    const original = jest.requireActual('@/headers');
+
+    return {
+        __esModule: true,
+        ...original,
+        getHeaders: jest.fn(original.getHeaders),
+        getCookies: jest.fn(original.getCookies),
+    };
+});
+
 describe('evaluation', () => {
     const apiKey = getApiKey().getIdentifier();
     const request = {
@@ -70,6 +84,7 @@ describe('evaluation', () => {
     } satisfies RequestContext;
 
     afterEach(() => {
+        jest.mocked(headers).mockReset();
         jest.mocked(getRequestContext).mockReset();
         jest.mocked(executeQuery).mockReset();
         jest.mocked(getDefaultFetchTimeout).mockReset();
@@ -158,7 +173,7 @@ describe('evaluation', () => {
                     logger: expect.any(FilteredLogger),
                 },
             },
-        }))('should forward the call %s to the fetchContent function', async (_, scenario) => {
+        }))('should forward the call %s to the evaluate function', async (_, scenario) => {
             const query = 'true';
             const result = true;
 
@@ -168,6 +183,21 @@ describe('evaluation', () => {
             await expect(evaluate(query, scenario.options)).resolves.toBe(result);
 
             expect(executeQuery).toHaveBeenCalledWith(query, scenario.resolvedOptions);
+        });
+
+        it('should forward the request context', async () => {
+            const context: NextRequestContext = {
+                req: {} as NextRequest,
+                res: {} as NextResponse,
+            };
+
+            jest.mocked(getRequestContext).mockReturnValue(request);
+            jest.mocked(executeQuery).mockResolvedValue(true);
+
+            await expect(evaluate('true', {requestContext: context})).resolves.toBe(true);
+
+            expect(getHeaders).toHaveBeenCalledWith(context);
+            expect(getCookies).toHaveBeenCalledWith(context);
         });
 
         it('should log warnings and errors', async () => {
@@ -245,6 +275,21 @@ describe('evaluation', () => {
     });
 
     describe('cql', () => {
+        beforeEach(() => {
+            jest.mocked(headers).mockReset();
+        });
+
+        it('should throw an error if used outside the App Router', async () => {
+            jest.mocked(headers).mockImplementation(() => {
+                throw new Error('next/headers requires app router');
+            });
+
+            await expect(cql`true`).rejects.toThrow(
+                'The cql tag function can only be used with App Router. '
+                + 'For help, see https://croct.help/sdk/nextjs/cql-missing-context',
+            );
+        });
+
         it('should evaluate a query with no arguments', async () => {
             const result = true;
 
