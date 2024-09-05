@@ -15,11 +15,14 @@ export type CroctProviderProps = Omit<ReactCroctProviderProps, OmittedProps>
 
 export const CroctProvider: FunctionComponent<CroctProviderProps> = props => {
     const {appId = getAppId(), ...rest} = props;
+    const debugMode = process.env.NEXT_PUBLIC_CROCT_DEBUG === 'true';
+    const endpointUrl = normalizeEnvVar(process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL);
 
     return (
         <ReactCroctProvider
-            debug={process.env.NEXT_PUBLIC_CROCT_DEBUG === 'true'}
+            debug={debugMode}
             appId={appId}
+            {...(endpointUrl !== undefined ? {baseEndpointUrl: endpointUrl} : {})}
             cookie={{
                 clientId: getClientIdCookieOptions(),
                 userToken: getUserTokenCookieOptions(),
@@ -29,3 +32,7 @@ export const CroctProvider: FunctionComponent<CroctProviderProps> = props => {
         />
     );
 };
+
+function normalizeEnvVar(value: string | undefined): string|undefined {
+    return value === undefined || value === '' ? undefined : value;
+}

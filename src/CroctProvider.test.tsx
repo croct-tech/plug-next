@@ -27,6 +27,7 @@ describe('<CroctProvider />', () => {
 
         delete process.env.NEXT_PUBLIC_CROCT_APP_ID;
         delete process.env.NEXT_PUBLIC_CROCT_DEBUG;
+        delete process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL;
     });
 
     afterEach(() => {
@@ -65,10 +66,12 @@ describe('<CroctProvider />', () => {
     it('should allow overriding the environment configuration', () => {
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
         process.env.NEXT_PUBLIC_CROCT_DEBUG = 'true';
+        process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL = 'https://example.com';
 
         const config = {
             appId: '11111111-1111-1111-1111-111111111111',
             debug: false,
+            baseEndpointUrl: 'https://override.com',
             cookie: {
                 clientId: {
                     name: 'custom-client-id',
@@ -92,6 +95,7 @@ describe('<CroctProvider />', () => {
                 appId: config.appId,
                 debug: config.debug,
                 cookie: config.cookie,
+                baseEndpointUrl: config.baseEndpointUrl,
             },
             expect.anything(),
         );
@@ -119,6 +123,20 @@ describe('<CroctProvider />', () => {
         expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
             expect.objectContaining({
                 debug: true,
+            }),
+            expect.anything(),
+        );
+    });
+
+    it('should detect the base endpoint URL from the environment', () => {
+        process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+        process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL = 'https://example.com';
+
+        render(<CroctProvider />);
+
+        expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
+            expect.objectContaining({
+                baseEndpointUrl: process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL,
             }),
             expect.anything(),
         );
