@@ -71,6 +71,11 @@ describe('fetchContent', () => {
             + '9wZXJzIn19.',
     } satisfies RequestContext;
 
+    beforeEach(() => {
+        delete process.env.NEXT_PUBLIC_CROCT_DEBUG;
+        delete process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL;
+    });
+
     afterEach(() => {
         jest.mocked(resolveRequestContext).mockReset();
         jest.mocked(getDefaultFetchTimeout).mockReset();
@@ -274,9 +279,10 @@ describe('fetchContent', () => {
     });
 
     it('should log warnings and errors', async () => {
+        jest.spyOn(console, 'log').mockImplementation();
+        jest.spyOn(console, 'debug').mockImplementation();
         jest.spyOn(console, 'warn').mockImplementation();
         jest.spyOn(console, 'error').mockImplementation();
-        jest.spyOn(console, 'log').mockImplementation();
         jest.spyOn(console, 'info').mockImplementation();
 
         jest.mocked(loadContent).mockResolvedValue({
@@ -291,16 +297,78 @@ describe('fetchContent', () => {
 
         const {logger} = jest.mocked(loadContent).mock.calls[0][1] as ResolvedFetchOptions;
 
-        expect(logger).toBeInstanceOf(FilteredLogger);
+        expect(logger).not.toBeUndefined();
 
         logger?.info('log');
         logger?.debug('debug');
         logger?.warn('warning');
         logger?.error('error');
 
-        expect(console.log).not.toHaveBeenCalled();
         expect(console.info).not.toHaveBeenCalled();
+        expect(console.debug).not.toHaveBeenCalled();
         expect(console.warn).toHaveBeenCalledWith('warning');
         expect(console.error).toHaveBeenCalledWith('error');
+
+        expect(console.log).not.toHaveBeenCalled();
+    });
+
+    it('should log all messages if the debug mode is enabled', async () => {
+        process.env.NEXT_PUBLIC_CROCT_DEBUG = 'true';
+
+        jest.spyOn(console, 'log').mockImplementation();
+        jest.spyOn(console, 'debug').mockImplementation();
+        jest.spyOn(console, 'warn').mockImplementation();
+        jest.spyOn(console, 'error').mockImplementation();
+        jest.spyOn(console, 'info').mockImplementation();
+
+        jest.mocked(loadContent).mockResolvedValue({
+            content: {
+                _component: 'component',
+            },
+        });
+
+        jest.mocked(resolveRequestContext).mockReturnValue(request);
+
+        await fetchContent<any, any>('slot-id');
+
+        const {logger} = jest.mocked(loadContent).mock.calls[0][1] as ResolvedFetchOptions;
+
+        expect(logger).not.toBeUndefined();
+
+        logger?.info('log');
+        logger?.debug('debug');
+        logger?.warn('warning');
+        logger?.error('error');
+
+        expect(console.info).toHaveBeenCalledWith('log');
+        expect(console.debug).toHaveBeenCalledWith('debug');
+        expect(console.warn).toHaveBeenCalledWith('warning');
+        expect(console.error).toHaveBeenCalledWith('error');
+
+        expect(console.log).not.toHaveBeenCalled();
+    });
+
+    it('should use the base endpoint URL from the environment', async () => {
+        process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL = 'https://example.com';
+
+        const slotId = 'slot-id';
+
+        const content: FetchResponse<any> = {
+            content: {
+                _component: 'component',
+            },
+        };
+
+        jest.mocked(resolveRequestContext).mockReturnValue({
+            clientId: request.clientId,
+        });
+
+        jest.mocked(loadContent).mockResolvedValue(content);
+
+        await fetchContent<any, any>(slotId);
+
+        expect(loadContent).toHaveBeenCalledWith(slotId, expect.objectContaining({
+            baseEndpointUrl: process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL,
+        }));
     });
 });

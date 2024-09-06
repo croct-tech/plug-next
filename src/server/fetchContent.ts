@@ -6,6 +6,7 @@ import {getApiKey} from '@/config/security';
 import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {RouteContext} from '@/headers';
+import {getEnvEntry, getEnvFlag} from '@/config/env';
 
 export type FetchOptions<T extends JsonObject = JsonObject> = Omit<DynamicContentOptions<T>, 'apiKey' | 'appId'> & {
     route?: RouteContext,
@@ -52,12 +53,17 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
             }
             : {}
         ),
+        ...getEnvEntry('baseEndpointUrl', process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL),
         timeout: getDefaultFetchTimeout(),
         extra: {
             cache: 'no-store',
         },
         ...rest,
-        logger: rest.logger ?? FilteredLogger.include(new ConsoleLogger(), ['warn', 'error']),
+        logger: rest.logger ?? (
+            getEnvFlag(process.env.NEXT_PUBLIC_CROCT_DEBUG)
+                ? new ConsoleLogger()
+                : FilteredLogger.include(new ConsoleLogger(), ['warn', 'error'])
+        ),
     });
 
     return promise.then(({content}) => content);
