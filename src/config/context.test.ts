@@ -52,6 +52,7 @@ describe('getRequestContext', () => {
             clientIp: '192.0.0.1',
             previewToken: 'ct.preview_token',
             userToken: token.toString(),
+            preferredLocale: 'en',
         } satisfies RequestContext;
 
         const headers = new Headers();
@@ -63,6 +64,7 @@ describe('getRequestContext', () => {
         headers.set(Header.CLIENT_IP, request.clientIp);
         headers.set(Header.PREVIEW_TOKEN, request.previewToken);
         headers.set(Header.USER_TOKEN, token.toString());
+        headers.set(Header.LOCALE, request.preferredLocale);
 
         expect(getRequestContext(headers, createCookieJar())).toEqual(request);
     });

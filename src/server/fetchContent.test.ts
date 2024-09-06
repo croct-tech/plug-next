@@ -63,6 +63,7 @@ describe('fetchContent', () => {
         referrer: 'http://referrer.com',
         clientIp: '192.0.0.1',
         clientAgent: 'user-agent',
+        preferredLocale: 'en',
         previewToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJodHRwczovL2Nyb2N0LmlvIiwi'
             + 'YXVkIjoiaHR0cHM6Ly9jcm9jdC5pbyIsImlhdCI6MTQ0MDk3OTEwMCwiZXhwIjoxNDQwOTc5M'
             + 'jAwLCJtZXRhZGF0YSI6eyJleHBlcmllbmNlTmFtZSI6IkRldmVsb3BlcnMgZXhwZXJpZW5jZS'
@@ -113,6 +114,7 @@ describe('fetchContent', () => {
                 clientId: request.clientId,
                 clientIp: request.clientIp,
                 clientAgent: request.clientAgent,
+                preferredLocale: request.preferredLocale,
                 context: {
                     page: {
                         url: request.uri,
@@ -149,8 +151,10 @@ describe('fetchContent', () => {
         'with overridden options': {
             request: {
                 clientId: request.clientId,
+                preferredLocale: request.preferredLocale,
             },
             options: {
+                preferredLocale: 'fr',
                 extra: {
                     cache: 'force-cache',
                 },
@@ -159,6 +163,7 @@ describe('fetchContent', () => {
                 apiKey: ApiKey.from(apiKey),
                 clientId: request.clientId,
                 clientIp: '127.0.0.1',
+                preferredLocale: 'fr',
                 extra: {
                     cache: 'force-cache',
                 },
