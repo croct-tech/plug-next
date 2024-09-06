@@ -7,6 +7,7 @@ import {
 import {FunctionComponent} from 'react';
 import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 import {getAppId} from '@/config/appId';
+import {getEnvEntry, getEnvEntryFlag} from '@/config/env';
 
 type OmittedProps = 'appId' | 'disableCidMirroring' | 'cidAssignerEndpointUrl';
 
@@ -15,14 +16,12 @@ export type CroctProviderProps = Omit<ReactCroctProviderProps, OmittedProps>
 
 export const CroctProvider: FunctionComponent<CroctProviderProps> = props => {
     const {appId = getAppId(), ...rest} = props;
-    const debugMode = process.env.NEXT_PUBLIC_CROCT_DEBUG === 'true';
-    const endpointUrl = normalizeEnvVar(process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL);
 
     return (
         <ReactCroctProvider
-            debug={debugMode}
             appId={appId}
-            {...(endpointUrl !== undefined ? {baseEndpointUrl: endpointUrl} : {})}
+            {...getEnvEntryFlag('debug', process.env.NEXT_PUBLIC_CROCT_DEBUG)}
+            {...getEnvEntry('baseEndpointUrl', process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL)}
             cookie={{
                 clientId: getClientIdCookieOptions(),
                 userToken: getUserTokenCookieOptions(),
@@ -32,7 +31,3 @@ export const CroctProvider: FunctionComponent<CroctProviderProps> = props => {
         />
     );
 };
-
-function normalizeEnvVar(value: string | undefined): string|undefined {
-    return value === undefined || value === '' ? undefined : value;
-}
