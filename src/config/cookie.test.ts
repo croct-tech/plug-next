@@ -69,7 +69,7 @@ describe('cookie', () => {
 
             expect(() => getClientIdCookieOptions()).toThrow(
                 'Croct\'s cookie duration must be a positive integer, got \'invalid\'. '
-                + 'Please check the NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION environment variable.',
+                + 'Please check the `NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION` environment variable.',
             );
         });
 
@@ -78,7 +78,7 @@ describe('cookie', () => {
 
             expect(() => getClientIdCookieOptions()).toThrow(
                 'Croct\'s cookie duration must be a positive integer, got \'-1\'. '
-                + 'Please check the NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION environment variable.',
+                + 'Please check the `NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION` environment variable.',
             );
         });
     });
@@ -173,7 +173,7 @@ describe('cookie', () => {
 
             expect(() => getUserTokenCookieOptions()).toThrow(
                 'Croct\'s cookie duration must be a positive integer, got \'invalid\'. '
-                + 'Please check the NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION environment variable.',
+                + 'Please check the `NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION` environment variable.',
             );
         });
 
@@ -182,7 +182,7 @@ describe('cookie', () => {
 
             expect(() => getUserTokenCookieOptions()).toThrow(
                 'Croct\'s cookie duration must be a positive integer, got \'-1\'. '
-                + 'Please check the NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION environment variable.',
+                + 'Please check the `NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION` environment variable.',
             );
         });
     });

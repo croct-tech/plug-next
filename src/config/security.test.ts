@@ -31,7 +31,7 @@ describe('security', () => {
         it('should throw an error if the API key is not set', () => {
             expect(() => getApiKey()).toThrow(
                 'Croct\'s API key is missing. '
-                + 'Did you forget to set the CROCT_API_KEY environment variable?',
+                + 'Did you forget to set the `CROCT_API_KEY` environment variable?',
             );
         });
 
@@ -39,7 +39,7 @@ describe('security', () => {
             process.env.CROCT_API_KEY = 'invalid';
 
             expect(() => getApiKey())
-                .toThrow('Croct\'s API key is invalid. Please check the CROCT_API_KEY environment variable.');
+                .toThrow('Croct\'s API key is invalid. Please check the `CROCT_API_KEY` environment variable.');
         });
     });
 
@@ -59,21 +59,23 @@ describe('security', () => {
 
             expect(() => getAuthenticationKey()).toThrow(
                 'Croct\'s API key does not have a private key. '
-                    + 'Please generate an API key with authenticate permissions and update '
-                    + 'the CROCT_API_KEY environment variable.',
+                + 'Please generate an API key with authenticate permissions and update '
+                + 'the `CROCT_API_KEY` environment variable.',
             );
         });
 
         it('should throw an error if the API key is not set', () => {
-            expect(() => getAuthenticationKey())
-                .toThrow('Croct\'s API key is missing. Did you forget to set the CROCT_API_KEY environment variable?');
+            expect(() => getAuthenticationKey()).toThrow(
+                'Croct\'s API key is missing. Did you forget to set the `CROCT_API_KEY` environment variable? '
+              + 'For help, see: https://croct.help/sdk/nextjs/missing-environment-variable',
+            );
         });
 
         it('should throw an error if the API key is invalid', () => {
             process.env.CROCT_API_KEY = 'invalid';
 
             expect(() => getAuthenticationKey())
-                .toThrow('Croct\'s API key is invalid. Please check the CROCT_API_KEY environment variable.');
+                .toThrow('Croct\'s API key is invalid. Please check the `CROCT_API_KEY` environment variable.');
         });
     });
 

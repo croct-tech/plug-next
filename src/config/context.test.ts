@@ -37,8 +37,10 @@ describe('getRequestContext', () => {
     const appId = '00000000-0000-0000-0000-000000000000';
 
     it('should throw an error when the client ID is missing', () => {
-        expect(() => getRequestContext(new Headers(), createCookieJar()))
-            .toThrow('Croct\'s client ID is missing. Did you forget to configure Croct\'s middleware?');
+        expect(() => getRequestContext(new Headers(), createCookieJar())).toThrow(
+            'Croct\'s Client ID is missing. Did you forget to configure Croct\'s middleware? '
+              + 'For help, see: https://croct.help/sdk/nextjs/missing-provider',
+        );
     });
 
     it('should return a full request context', () => {

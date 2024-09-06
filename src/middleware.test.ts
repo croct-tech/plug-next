@@ -237,7 +237,7 @@ describe('middleware', () => {
 
         await expect(withCroct()(request, fetchEvent)).rejects.toThrow(
             `Croct's cookie duration must be a positive integer, got '${duration}'.`
-            + ' Please check the NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION environment variable.',
+            + ' Please check the `NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION` environment variable.',
         );
     });
 

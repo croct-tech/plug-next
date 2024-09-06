@@ -10,7 +10,7 @@ export async function identify(userId: string, route?: RouteContext): Promise<vo
     } catch {
         throw new Error(
             'identify() requires specifying the `route` parameter outside app routes. '
-            + 'For help, see: https://croct.help/sdk/nextjs/identify-route-context',
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
         );
     }
 

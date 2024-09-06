@@ -15,7 +15,7 @@ export function getClientIdCookieOptions(): CookieOptions {
     if (Number.isNaN(parsedDuration) || parsedDuration <= 0) {
         throw new Error(
             `Croct's cookie duration must be a positive integer, got '${duration}'. `
-            + 'Please check the NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION environment variable.',
+            + 'Please check the `NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION` environment variable.',
         );
     }
 
@@ -37,7 +37,7 @@ export function getUserTokenCookieOptions(): CookieOptions {
     if (Number.isNaN(parsedDuration) || parsedDuration <= 0) {
         throw new Error(
             `Croct's cookie duration must be a positive integer, got '${duration}'. `
-            + 'Please check the NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION environment variable.',
+            + 'Please check the `NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION` environment variable.',
         );
     }
 

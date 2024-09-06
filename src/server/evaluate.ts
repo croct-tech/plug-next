@@ -24,7 +24,7 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
             return Promise.reject(
                 new Error(
                     'evaluate() requires specifying the `route` option outside app routes. '
-                    + 'For help, see: https://croct.help/sdk/nextjs/evaluate-route-context',
+                    + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
                 ),
             );
         }
@@ -70,8 +70,8 @@ export function cql<T extends JsonValue>(fragments: TemplateStringsArray, ...arg
     if (!isAppRouter()) {
         return Promise.reject(
             new Error(
-                'The cql tag function can only be used with App Router. '
-                + 'For help, see https://croct.help/sdk/nextjs/cql-missing-context',
+                'cql() can only be used with App Router. '
+                + 'For help, see https://croct.help/sdk/nextjs/missing-route-context',
             ),
         );
     }

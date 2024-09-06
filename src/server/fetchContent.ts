@@ -27,7 +27,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
             return Promise.reject(
                 new Error(
                     'fetchContent() requires specifying the `route` option outside app routes. '
-                    + 'For help, see: https://croct.help/sdk/nextjs/fetch-content-route-context',
+                    + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
                 ),
             );
         }

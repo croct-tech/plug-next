@@ -22,7 +22,10 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
     const clientId = headers.get(Header.CLIENT_ID);
 
     if (clientId === null) {
-        throw new Error('Croct\'s client ID is missing. Did you forget to configure Croct\'s middleware?');
+        throw new Error(
+            'Croct\'s Client ID is missing. Did you forget to configure Croct\'s middleware? '
+          + 'For help, see: https://croct.help/sdk/nextjs/missing-provider',
+        );
     }
 
     const context: RequestContext = {

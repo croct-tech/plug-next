@@ -7,8 +7,9 @@ describe('getAppId', () => {
 
     it('should throw an error when the application ID is missing', () => {
         expect(() => getAppId()).toThrow(
-            'Croct\'s application ID is missing. '
-                + 'Did you forget to set the NEXT_PUBLIC_CROCT_APP_ID environment variable?',
+            'Croct\'s Application ID is missing. '
+            + 'Did you forget to set the `NEXT_PUBLIC_CROCT_APP_ID` environment variable? '
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-environment-variable',
         );
     });
 
@@ -16,8 +17,9 @@ describe('getAppId', () => {
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '';
 
         expect(() => getAppId()).toThrow(
-            'Croct\'s application ID is missing. '
-            + 'Did you forget to set the NEXT_PUBLIC_CROCT_APP_ID environment variable?',
+            'Croct\'s Application ID is missing. '
+            + 'Did you forget to set the `NEXT_PUBLIC_CROCT_APP_ID` environment variable? '
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-environment-variable',
         );
     });
 
@@ -25,8 +27,8 @@ describe('getAppId', () => {
         process.env.NEXT_PUBLIC_CROCT_APP_ID = 'invalid';
 
         expect(() => getAppId()).toThrow(
-            'Croct\'s application ID is invalid. '
-                + 'Please check the NEXT_PUBLIC_CROCT_APP_ID environment variable.',
+            'Croct\'s Application ID is invalid. '
+                + 'Please check the `NEXT_PUBLIC_CROCT_APP_ID` environment variable.',
         );
     });
 
