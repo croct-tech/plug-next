@@ -14,6 +14,7 @@ export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOption
 
 export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
     const {route, ...rest} = options;
+
     let context: RequestContext;
 
     try {

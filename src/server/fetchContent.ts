@@ -42,6 +42,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
         ...(context.userToken !== undefined && {userToken: context.userToken}),
         ...(context.clientId !== undefined && {clientId: context.clientId}),
         ...(context.clientAgent !== undefined && {clientAgent: context.clientAgent}),
+        ...(context.preferredLocale !== undefined && {preferredLocale: context.preferredLocale}),
         ...(context.uri !== undefined
             ? {
                 context: {

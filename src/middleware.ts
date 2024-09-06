@@ -62,7 +62,7 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
         const clientIdCookie = getClientIdCookieOptions();
         const previewCookie = getPreviewCookieOptions();
         const userCookie = getUserTokenCookieOptions();
-        const {headers} = request;
+        const {headers, nextUrl: {locale}} = request;
 
         const userToken = await getUserToken(request, userCookie.name, userIdResolver);
         const clientId = getClientId(request, clientIdCookie.name);
@@ -70,6 +70,10 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
         headers.set(Header.USER_TOKEN, userToken.toString());
         headers.set(Header.REQUEST_URI, getCurrentUrl(request));
         headers.set(Header.CLIENT_ID, clientId);
+
+        if (locale !== '') {
+            headers.set(Header.LOCALE, locale);
+        }
 
         if (request.ip !== undefined) {
             headers.set(Header.CLIENT_IP, request.ip);

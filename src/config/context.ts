@@ -11,6 +11,7 @@ export type RequestContext = {
     clientIp?: string,
     userToken?: string,
     previewToken?: string,
+    preferredLocale?: string,
 };
 
 export function resolveRequestContext(route?: RouteContext): RequestContext {
@@ -27,6 +28,12 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
     const context: RequestContext = {
         clientId: clientId,
     };
+
+    const locale = headers.get(Header.LOCALE);
+
+    if (locale !== null) {
+        context.preferredLocale = locale;
+    }
 
     const uri = headers.get(Header.REQUEST_URI);
 

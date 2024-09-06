@@ -10,4 +10,5 @@ export enum Header {
     USER_TOKEN = 'x-user-token',
     PREVIEW_TOKEN = 'x-preview-token',
     REQUEST_URI = 'x-request-uri',
+    LOCALE = 'x-locale',
 }

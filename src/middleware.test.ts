@@ -241,6 +241,50 @@ describe('middleware', () => {
         );
     });
 
+    it('should forward the locale through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const locale = 'en';
+
+        const url = new URL('https://example.com/') as NextRequest['nextUrl'];
+
+        url.locale = locale;
+
+        jest.spyOn(request, 'nextUrl', 'get').mockReturnValue(url);
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
+
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(request.headers.get(Header.LOCALE)).toBe(locale);
+    });
+
+    it('should not forward the locale through the request headers if it is empty', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const url = new URL('https://example.com/') as NextRequest['nextUrl'];
+
+        url.locale = '';
+
+        jest.spyOn(request, 'nextUrl', 'get').mockReturnValue(url);
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
+
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(request.headers.get(Header.LOCALE)).toBeNull();
+    });
+
     it('should forward the URL through the request headers', async () => {
         const request = createRequestMock();
         const response = createResponseMock();
