@@ -5,15 +5,16 @@ export function getAppId(): string {
 
     if (appId === '') {
         throw new Error(
-            'Croct\'s application ID is missing. '
-            + 'Did you forget to set the NEXT_PUBLIC_CROCT_APP_ID environment variable?',
+            'Croct\'s Application ID is missing. '
+            + 'Did you forget to set the `NEXT_PUBLIC_CROCT_APP_ID` environment variable? '
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-environment-variable',
         );
     }
 
     if (!PATTERN.test(appId)) {
         throw new Error(
-            'Croct\'s application ID is invalid. '
-            + 'Please check the NEXT_PUBLIC_CROCT_APP_ID environment variable.',
+            'Croct\'s Application ID is invalid. '
+            + 'Please check the `NEXT_PUBLIC_CROCT_APP_ID` environment variable.',
         );
     }
 

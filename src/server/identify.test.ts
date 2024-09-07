@@ -93,7 +93,7 @@ describe('identify', () => {
 
         await expect(() => identify('foo')).rejects.toThrow(
             'identify() requires specifying the `route` parameter outside app routes. '
-            + 'For help, see: https://croct.help/sdk/nextjs/identify-route-context',
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
         );
     });
 });

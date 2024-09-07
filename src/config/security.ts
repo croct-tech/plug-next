@@ -7,13 +7,17 @@ export function getApiKey(): ApiKey {
     const apiKey = process.env.CROCT_API_KEY;
 
     if (apiKey === undefined) {
-        throw new Error('Croct\'s API key is missing. Did you forget to set the CROCT_API_KEY environment variable?');
+        throw new Error(
+            'Croct\'s API key is missing. '
+          + 'Did you forget to set the `CROCT_API_KEY` environment variable? '
+          + 'For help, see: https://croct.help/sdk/nextjs/missing-environment-variable',
+        );
     }
 
     try {
         return ApiKey.parse(apiKey);
     } catch {
-        throw new Error('Croct\'s API key is invalid. Please check the CROCT_API_KEY environment variable.');
+        throw new Error('Croct\'s API key is invalid. Please check the `CROCT_API_KEY` environment variable.');
     }
 }
 
@@ -24,7 +28,7 @@ export function getAuthenticationKey(): ApiKey {
         throw new Error(
             'Croct\'s API key does not have a private key. '
             + 'Please generate an API key with authenticate permissions and update '
-            + 'the CROCT_API_KEY environment variable.',
+            + 'the `CROCT_API_KEY` environment variable.',
         );
     }
 
@@ -46,7 +50,10 @@ export function getTokenDuration(): number {
     const parsedDuration = Number.parseInt(duration, 10);
 
     if (Number.isNaN(parsedDuration) || parsedDuration <= 0) {
-        throw new Error('The token duration must be a positive integer.');
+        throw new Error(
+            'The token duration must be a positive integer. '
+          + 'Please check the `CROCT_TOKEN_DURATION` environment variable.',
+        );
     }
 
     return parsedDuration;

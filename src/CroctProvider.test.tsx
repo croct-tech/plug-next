@@ -41,8 +41,9 @@ describe('<CroctProvider />', () => {
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '';
 
         expect(() => render(<CroctProvider />)).toThrow(
-            'Croct\'s application ID is missing. '
-            + 'Did you forget to set the NEXT_PUBLIC_CROCT_APP_ID environment variable?',
+            'Croct\'s Application ID is missing. '
+            + 'Did you forget to set the `NEXT_PUBLIC_CROCT_APP_ID` environment variable? '
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-environment-variable',
         );
     });
 

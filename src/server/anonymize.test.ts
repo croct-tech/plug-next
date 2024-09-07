@@ -92,7 +92,7 @@ describe('anonymize', () => {
 
         await expect(anonymize).rejects.toThrow(
             'anonymize() requires specifying the `route` parameter outside app routes. '
-            + 'For help, see: https://croct.help/sdk/nextjs/anonymize-route-context',
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
         );
     });
 });

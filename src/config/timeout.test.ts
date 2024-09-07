@@ -41,7 +41,7 @@ describe('getDefaultFetchTimeout', () => {
 
         expect(() => getDefaultFetchTimeout()).toThrow(
             "Croct's default fetch timeout must be a non-negative integer, got 'invalid'. "
-            + 'Please check the environment variable NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT.',
+            + 'Please check the environment variable `NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT`.',
         );
     });
 
@@ -50,7 +50,7 @@ describe('getDefaultFetchTimeout', () => {
 
         expect(() => getDefaultFetchTimeout()).toThrow(
             "Croct's default fetch timeout must be a non-negative integer, got '-1'. "
-                + 'Please check the environment variable NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT.',
+                + 'Please check the environment variable `NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT`.',
         );
     });
 });

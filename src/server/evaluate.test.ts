@@ -193,7 +193,7 @@ describe('evaluation', () => {
 
             await expect(evaluate('true')).rejects.toThrow(
                 'evaluate() requires specifying the `route` option outside app routes. '
-                + 'For help, see: https://croct.help/sdk/nextjs/evaluate-route-context',
+                + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
             );
         });
 
@@ -344,8 +344,8 @@ describe('evaluation', () => {
             });
 
             await expect(cql`true`).rejects.toThrow(
-                'The cql tag function can only be used with App Router. '
-                + 'For help, see https://croct.help/sdk/nextjs/cql-missing-context',
+                'cql() can only be used with App Router. '
+                + 'For help, see https://croct.help/sdk/nextjs/missing-route-context',
             );
         });
 

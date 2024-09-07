@@ -237,7 +237,7 @@ describe('fetchContent', () => {
 
         await expect(fetchContent('slot-id')).rejects.toThrow(
             'fetchContent() requires specifying the `route` option outside app routes. '
-            + 'For help, see: https://croct.help/sdk/nextjs/fetch-content-route-context',
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
         );
     });
 
