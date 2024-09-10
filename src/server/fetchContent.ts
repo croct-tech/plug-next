@@ -1,4 +1,4 @@
-import {DynamicContentOptions, fetchContent as loadContent} from '@croct/plug-react/api';
+import {DynamicContentOptions, fetchContent as loadContent, FetchResponse} from '@croct/plug-react/api';
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
@@ -15,7 +15,7 @@ export type FetchOptions<T extends JsonObject = JsonObject> = Omit<DynamicConten
 export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     slotId: I,
     options: FetchOptions<SlotContent<I, C>> = {},
-): Promise<SlotContent<I, C>> {
+): Promise<FetchResponse<I, C>> {
     const {route, ...rest} = options;
 
     let context: RequestContext;
@@ -35,7 +35,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
         return Promise.reject(error);
     }
 
-    const promise = loadContent<I, C>(slotId, {
+    return loadContent<I, C>(slotId, {
         apiKey: getApiKey(),
         clientIp: context.clientIp ?? '127.0.0.1',
         ...(context.previewToken !== undefined && {previewToken: context.previewToken}),
@@ -66,6 +66,4 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
                 : FilteredLogger.include(new ConsoleLogger(), ['warn', 'error'])
         ),
     });
-
-    return promise.then(({content}) => content);
 }
