@@ -181,7 +181,7 @@ describe('fetchContent', () => {
         jest.mocked(resolveRequestContext).mockReturnValue(scenario.request);
         jest.mocked(loadContent).mockResolvedValue(content);
 
-        await expect(fetchContent<any, any>(slotId, scenario.options)).resolves.toEqual(content.content);
+        await expect(fetchContent<any, any>(slotId, scenario.options)).resolves.toEqual(content);
 
         expect(loadContent).toHaveBeenCalledWith(slotId, scenario.resolvedOptions);
     });
