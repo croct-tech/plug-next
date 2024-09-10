@@ -36,6 +36,11 @@ jest.mock(
 describe('getRequestContext', () => {
     const appId = '00000000-0000-0000-0000-000000000000';
 
+    beforeEach(() => {
+        jest.clearAllMocks();
+        delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE;
+    });
+
     it('should throw an error when the client ID is missing', () => {
         expect(() => getRequestContext(new Headers(), createCookieJar())).toThrow(
             'Croct\'s Client ID is missing. Did you forget to configure Croct\'s middleware? '
@@ -66,7 +71,7 @@ describe('getRequestContext', () => {
         headers.set(Header.CLIENT_IP, request.clientIp);
         headers.set(Header.PREVIEW_TOKEN, request.previewToken);
         headers.set(Header.USER_TOKEN, token.toString());
-        headers.set(Header.LOCALE, request.preferredLocale);
+        headers.set(Header.PREFERRED_LOCALE, request.preferredLocale);
 
         expect(getRequestContext(headers, createCookieJar())).toEqual(request);
     });
@@ -147,6 +152,18 @@ describe('getRequestContext', () => {
 
         expect(context.userToken).toEqual(newToken.toString());
     });
+
+    it('should return the preferred locale from the environment', () => {
+        process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'en';
+
+        const headers = new Headers();
+
+        headers.set(Header.CLIENT_ID, '00000000-0000-0000-0000-000000000000');
+
+        const context = getRequestContext(headers, createCookieJar());
+
+        expect(context.preferredLocale).toEqual('en');
+    });
 });
 
 describe('resolveRequestContext', () => {
@@ -166,6 +183,7 @@ describe('resolveRequestContext', () => {
             referrer: 'http://referrer.com',
             clientIp: '192.0.0.1',
             previewToken: 'ct.preview_token',
+            preferredLocale: 'en',
         } satisfies RequestContext;
 
         headers.set(Header.CLIENT_ID, request.clientId);
@@ -174,6 +192,7 @@ describe('resolveRequestContext', () => {
         headers.set(Header.REFERRER, request.referrer);
         headers.set(Header.CLIENT_IP, request.clientIp);
         headers.set(Header.PREVIEW_TOKEN, request.previewToken);
+        headers.set(Header.PREFERRED_LOCALE, request.preferredLocale);
 
         jest.mocked(getHeaders).mockReturnValue(headers);
         jest.mocked(getCookies).mockReturnValue(cookies);

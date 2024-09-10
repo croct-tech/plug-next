@@ -28,6 +28,8 @@ describe('<CroctProvider />', () => {
         delete process.env.NEXT_PUBLIC_CROCT_APP_ID;
         delete process.env.NEXT_PUBLIC_CROCT_DEBUG;
         delete process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL;
+        delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT;
+        delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE;
     });
 
     afterEach(() => {
@@ -67,11 +69,15 @@ describe('<CroctProvider />', () => {
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
         process.env.NEXT_PUBLIC_CROCT_DEBUG = 'true';
         process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL = 'https://example.com';
+        process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT = '3000';
+        process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'es';
 
         const config = {
             appId: '11111111-1111-1111-1111-111111111111',
             debug: false,
             baseEndpointUrl: 'https://override.com',
+            defaultFetchTimeout: 2000,
+            defaultPreferredLocale: 'en',
             cookie: {
                 clientId: {
                     name: 'custom-client-id',
@@ -96,6 +102,8 @@ describe('<CroctProvider />', () => {
                 debug: config.debug,
                 cookie: config.cookie,
                 baseEndpointUrl: config.baseEndpointUrl,
+                defaultFetchTimeout: config.defaultFetchTimeout,
+                defaultPreferredLocale: config.defaultPreferredLocale,
             },
             expect.anything(),
         );
@@ -137,6 +145,34 @@ describe('<CroctProvider />', () => {
         expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
             expect.objectContaining({
                 baseEndpointUrl: process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL,
+            }),
+            expect.anything(),
+        );
+    });
+
+    it('should detect the default fetch timeout from the environment', () => {
+        process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+        process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT = '3000';
+
+        render(<CroctProvider />);
+
+        expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
+            expect.objectContaining({
+                defaultFetchTimeout: 3000,
+            }),
+            expect.anything(),
+        );
+    });
+
+    it('should detect the default preferred locale from the environment', () => {
+        process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+        process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'es';
+
+        render(<CroctProvider />);
+
+        expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
+            expect.objectContaining({
+                defaultPreferredLocale: process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE,
             }),
             expect.anything(),
         );

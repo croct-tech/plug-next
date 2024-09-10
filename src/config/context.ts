@@ -2,6 +2,7 @@ import {Token} from '@croct/sdk/token';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
 import {CookieReader, getCookies, getHeaders, HeaderReader, RouteContext} from '@/headers';
+import {getEnvValue} from '@/config/env';
 
 export type RequestContext = {
     clientId: string,
@@ -32,7 +33,9 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
         clientId: clientId,
     };
 
-    const locale = headers.get(Header.LOCALE);
+    const locale = headers.get(Header.PREFERRED_LOCALE)
+        ?? getEnvValue(process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE)
+        ?? null;
 
     if (locale !== null) {
         context.preferredLocale = locale;

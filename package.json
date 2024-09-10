@@ -37,9 +37,9 @@
     "react-dom": "^16.8.0  || ^17.0.0 || ^18.0.0"
   },
   "dependencies": {
-    "@croct/plug": "^0.15.0",
-    "@croct/plug-react": "^0.7.2",
-    "@croct/sdk": "^0.16.2",
+    "@croct/plug": "^0.16.0",
+    "@croct/plug-react": "^0.8.0",
+    "@croct/sdk": "^0.17.2",
     "cookie": "^0.6.0",
     "uuid": "^10.0.0"
   },
@@ -57,7 +57,7 @@
     "@types/react": "^18.0.25",
     "@types/react-dom": "^18.0.9",
     "@types/set-cookie-parser": "^2.4.7",
-    "@types/uuid": "^9.0.5",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "babel-loader": "^9.1.0",

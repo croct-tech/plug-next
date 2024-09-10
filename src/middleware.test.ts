@@ -261,7 +261,7 @@ describe('middleware', () => {
 
         expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
 
-        expect(request.headers.get(Header.LOCALE)).toBe(locale);
+        expect(request.headers.get(Header.PREFERRED_LOCALE)).toBe(locale);
     });
 
     it('should not forward the locale through the request headers if it is empty', async () => {
@@ -282,7 +282,7 @@ describe('middleware', () => {
 
         expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
 
-        expect(request.headers.get(Header.LOCALE)).toBeNull();
+        expect(request.headers.get(Header.PREFERRED_LOCALE)).toBeNull();
     });
 
     it('should forward the URL through the request headers', async () => {

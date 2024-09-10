@@ -72,7 +72,7 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
         headers.set(Header.CLIENT_ID, clientId);
 
         if (locale !== '') {
-            headers.set(Header.LOCALE, locale);
+            headers.set(Header.PREFERRED_LOCALE, locale);
         }
 
         if (request.ip !== undefined) {
