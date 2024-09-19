@@ -55,6 +55,7 @@ describe('<CroctProvider />', () => {
         expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
             {
                 appId: '00000000-0000-0000-0000-000000000000',
+                disableCidMirroring: true,
                 cookie: {
                     clientId: getClientIdCookieOptions(),
                     userToken: getUserTokenCookieOptions(),
@@ -104,6 +105,7 @@ describe('<CroctProvider />', () => {
                 baseEndpointUrl: config.baseEndpointUrl,
                 defaultFetchTimeout: config.defaultFetchTimeout,
                 defaultPreferredLocale: config.defaultPreferredLocale,
+                disableCidMirroring: true,
             },
             expect.anything(),
         );

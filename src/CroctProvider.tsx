@@ -22,6 +22,7 @@ export const CroctProvider: FunctionComponent<CroctProviderProps> = props => {
     return (
         <ReactCroctProvider
             appId={appId}
+            disableCidMirroring
             {...getEnvEntryFlag('debug', process.env.NEXT_PUBLIC_CROCT_DEBUG)}
             {...getEnvEntry('baseEndpointUrl', process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL)}
             {...getEnvEntry('defaultPreferredLocale', process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE)}
