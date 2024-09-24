@@ -21,13 +21,11 @@
     <a href="https://codeclimate.com/repos/66391248a64e53247c8aed61/test_coverage"><img alt="Coverage" src="https://api.codeclimate.com/v1/badges/10e7c6cc904b72515314/test_coverage"/></a>
 </p>
 
-<hr/>
-
-### Introduction
+## Introduction
 
 Croct is a headless CMS that helps you manage content, run AB tests, and personalize experiences without the hassle of complex integrations.
 
-### Installation
+## Installation
 
 Run this command to install the SDK:
 
@@ -36,15 +34,15 @@ npm install @croct/plug-next
 ```
 See our [quick start guide](https://docs.croct.com/reference/sdk/nextjs/installation) for more details.
 
-### Documentation
+## Documentation
 
 Visit our [official documentation](https://docs.croct.com/reference/sdk/nextjs/installation).
 
-### Support
+## Support
 
 Join our official [Slack channel](https://croct.link/community) to get help from the Croct team and other developers.
 
-### Contribution
+## Contribution
 
 Contributions are always welcome!
 
@@ -52,6 +50,6 @@ Contributions are always welcome!
 - For major changes, please [open an issue](https://github.com/croct-tech/plug-next/issues) first to discuss what you would like to change.
 - Please make sure to update tests as appropriate. Run tests with `npm test`.
 
-### License
+## License
 
 This library is licensed under the [MIT license](LICENSE).
