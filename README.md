@@ -9,7 +9,7 @@
     </picture>
   </a>
   <br/>
-  <strong>Croct React SDK</strong><br/>
+  <strong>Croct Next.js SDK</strong><br/>
   Bring dynamic, personalized content natively into your applications.
 </p>
 <div align="center">
