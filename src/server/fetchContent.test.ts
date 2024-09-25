@@ -5,7 +5,7 @@ import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import type {NextRequest, NextResponse} from 'next/server';
 import {fetchContent, FetchOptions} from './fetchContent';
-import {RequestContext, resolveRequestContext} from '@/config/context';
+import {RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
 import {RouteContext} from '@/headers';
@@ -43,6 +43,7 @@ jest.mock(
         __esModule: true,
         ...jest.requireActual('@/config/context'),
         resolveRequestContext: jest.fn(),
+        resolvePreferredLocale: jest.fn(),
     }),
 );
 
@@ -84,7 +85,8 @@ describe('fetchContent', () => {
     });
 
     type FetchScenario = {
-        request: RequestContext,
+        request?: RequestContext,
+        preferredLocale?: string,
         options: FetchOptions<any>,
         resolvedOptions: ResolvedFetchOptions,
     };
@@ -170,6 +172,28 @@ describe('fetchContent', () => {
                 logger: expect.any(FilteredLogger),
             },
         },
+        'of static content': {
+            options: {
+                static: true,
+            },
+            resolvedOptions: {
+                static: true,
+                apiKey: ApiKey.from(apiKey),
+                logger: expect.any(FilteredLogger),
+            },
+        },
+        'of static content with preferred locale': {
+            preferredLocale: request.preferredLocale,
+            options: {
+                static: true,
+            },
+            resolvedOptions: {
+                static: true,
+                apiKey: ApiKey.from(apiKey),
+                logger: expect.any(FilteredLogger),
+                preferredLocale: request.preferredLocale,
+            },
+        },
     }))('should forward the call %s to the fetchContent function', async (_, scenario) => {
         const slotId = 'slot-id';
         const content: FetchResponse<any> = {
@@ -178,7 +202,18 @@ describe('fetchContent', () => {
             },
         };
 
-        jest.mocked(resolveRequestContext).mockReturnValue(scenario.request);
+        if (scenario.request === undefined) {
+            jest.mocked(resolveRequestContext).mockImplementation(() => {
+                throw new Error('next/headers requires app router');
+            });
+        } else {
+            jest.mocked(resolveRequestContext).mockReturnValue(scenario.request);
+        }
+
+        if (scenario.preferredLocale !== undefined) {
+            jest.mocked(resolvePreferredLocale).mockReturnValue(scenario.preferredLocale);
+        }
+
         jest.mocked(loadContent).mockResolvedValue(content);
 
         await expect(fetchContent<any, any>(slotId, scenario.options)).resolves.toEqual(content);
@@ -186,7 +221,7 @@ describe('fetchContent', () => {
         expect(loadContent).toHaveBeenCalledWith(slotId, scenario.resolvedOptions);
     });
 
-    it('should use the default fetch timeout', async () => {
+    it.each([true, false])('should use the default fetch timeout (static: %s)', async staticContent => {
         const defaultTimeout = 1000;
         const slotId = 'slot-id';
         const content: FetchResponse<any> = {
@@ -203,14 +238,17 @@ describe('fetchContent', () => {
 
         jest.mocked(loadContent).mockResolvedValue(content);
 
-        await fetchContent<any, any>(slotId);
+        await fetchContent<any, any>(slotId, {
+            static: staticContent,
+        });
 
         expect(loadContent).toHaveBeenCalledWith(slotId, expect.objectContaining({
+            static: staticContent,
             timeout: defaultTimeout,
         }));
     });
 
-    it('should forward the route context', async () => {
+    it('should forward the route context when requesting dynamic content', async () => {
         const route: RouteContext = {
             req: {} as NextRequest,
             res: {} as NextResponse,
@@ -228,6 +266,27 @@ describe('fetchContent', () => {
         });
 
         expect(resolveRequestContext).toHaveBeenCalledWith(route);
+    });
+
+    it('should forward the route context when requesting static content', async () => {
+        const route: RouteContext = {
+            req: {} as NextRequest,
+            res: {} as NextResponse,
+        };
+
+        jest.mocked(resolveRequestContext).mockReturnValue(request);
+        jest.mocked(loadContent).mockResolvedValue({
+            content: {
+                _component: 'component',
+            },
+        });
+
+        await fetchContent('slot-id', {
+            static: true,
+            route: route,
+        });
+
+        expect(resolvePreferredLocale).toHaveBeenCalledWith(route);
     });
 
     it('should report an error if the route context is missing', async () => {
@@ -256,7 +315,7 @@ describe('fetchContent', () => {
         await expect(fetchContent('true', {route: route})).rejects.toBe(error);
     });
 
-    it('should override the default fetch timeout', async () => {
+    it.each([true, false])('should override the default fetch timeout', async staticContent => {
         const defaultTimeout = 1000;
         const timeout = 2000;
         const slotId = 'slot-id';
@@ -275,15 +334,17 @@ describe('fetchContent', () => {
         jest.mocked(loadContent).mockResolvedValue(content);
 
         await fetchContent<any, any>(slotId, {
+            static: staticContent,
             timeout: timeout,
         });
 
         expect(loadContent).toHaveBeenCalledWith(slotId, expect.objectContaining({
+            static: staticContent,
             timeout: timeout,
         }));
     });
 
-    it('should log warnings and errors', async () => {
+    it.each([true, false])('should log warnings and errors', async staticContent => {
         jest.spyOn(console, 'log').mockImplementation();
         jest.spyOn(console, 'debug').mockImplementation();
         jest.spyOn(console, 'warn').mockImplementation();
@@ -298,7 +359,9 @@ describe('fetchContent', () => {
 
         jest.mocked(resolveRequestContext).mockReturnValue(request);
 
-        await fetchContent<any, any>('slot-id');
+        await fetchContent<any, any>('slot-id', {
+            static: staticContent,
+        });
 
         const {logger} = jest.mocked(loadContent).mock.calls[0][1] as ResolvedFetchOptions;
 
@@ -317,7 +380,7 @@ describe('fetchContent', () => {
         expect(console.log).not.toHaveBeenCalled();
     });
 
-    it('should log all messages if the debug mode is enabled', async () => {
+    it.each([true, false])('should log all messages if the debug mode is enabled', async staticContent => {
         process.env.NEXT_PUBLIC_CROCT_DEBUG = 'true';
 
         jest.spyOn(console, 'log').mockImplementation();
@@ -334,7 +397,9 @@ describe('fetchContent', () => {
 
         jest.mocked(resolveRequestContext).mockReturnValue(request);
 
-        await fetchContent<any, any>('slot-id');
+        await fetchContent<any, any>('slot-id', {
+            static: staticContent,
+        });
 
         const {logger} = jest.mocked(loadContent).mock.calls[0][1] as ResolvedFetchOptions;
 
@@ -353,7 +418,7 @@ describe('fetchContent', () => {
         expect(console.log).not.toHaveBeenCalled();
     });
 
-    it('should use the base endpoint URL from the environment', async () => {
+    it.each([true, false])('should use the base endpoint URL from the environment', async staticContent => {
         process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL = 'https://example.com';
 
         const slotId = 'slot-id';
@@ -370,9 +435,12 @@ describe('fetchContent', () => {
 
         jest.mocked(loadContent).mockResolvedValue(content);
 
-        await fetchContent<any, any>(slotId);
+        await fetchContent<any, any>(slotId, {
+            static: staticContent,
+        });
 
         expect(loadContent).toHaveBeenCalledWith(slotId, expect.objectContaining({
+            static: staticContent,
             baseEndpointUrl: process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL,
         }));
     });

@@ -1,14 +1,23 @@
-import {DynamicContentOptions, fetchContent as loadContent, FetchResponse} from '@croct/plug-react/api';
+import {
+    DynamicContentOptions as DynamicOptions,
+    StaticContentOptions as StaticOptions,
+    fetchContent as loadContent,
+    FetchResponse,
+} from '@croct/plug-react/api';
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {getApiKey} from '@/config/security';
-import {RequestContext, resolveRequestContext} from '@/config/context';
+import {RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {RouteContext} from '@/headers';
 import {getEnvEntry, getEnvFlag} from '@/config/env';
 
-export type FetchOptions<T extends JsonObject = JsonObject> = Omit<DynamicContentOptions<T>, 'apiKey' | 'appId'> & {
+export type DynamicContentOptions<T extends JsonObject = JsonObject> = Omit<DynamicOptions<T>, 'apiKey' | 'appId'>;
+
+export type StaticContentOptions<T extends JsonObject = JsonObject> = Omit<StaticOptions<T>, 'apiKey' | 'appId'>;
+
+export type FetchOptions<T extends JsonObject = JsonObject> = (DynamicContentOptions<T> | StaticContentOptions<T>) & {
     route?: RouteContext,
 };
 
@@ -16,7 +25,37 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     slotId: I,
     options: FetchOptions<SlotContent<I, C>> = {},
 ): Promise<FetchResponse<I, C>> {
-    const {route, ...rest} = options;
+    const {logger, route, ...rest} = options;
+
+    const timeout = getDefaultFetchTimeout();
+    const commonOptions = {
+        apiKey: getApiKey(),
+        ...getEnvEntry('baseEndpointUrl', process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL),
+        ...(timeout !== undefined && {timeout: timeout}),
+        logger: logger ?? (
+            getEnvFlag(process.env.NEXT_PUBLIC_CROCT_DEBUG)
+                ? new ConsoleLogger()
+                : FilteredLogger.include(new ConsoleLogger(), ['warn', 'error'])
+        ),
+    } satisfies Partial<StaticOptions>;
+
+    if (rest.static === true) {
+        let preferredLocale = rest.preferredLocale ?? null;
+
+        if (preferredLocale === null) {
+            try {
+                preferredLocale = resolvePreferredLocale(route);
+            } catch {
+                // Static content can be fetched from anywhere
+            }
+        }
+
+        return loadContent<I, C>(slotId, {
+            ...commonOptions,
+            ...rest,
+            ...(preferredLocale !== null && {preferredLocale: preferredLocale}),
+        });
+    }
 
     let context: RequestContext;
 
@@ -36,7 +75,6 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     }
 
     return loadContent<I, C>(slotId, {
-        apiKey: getApiKey(),
         clientIp: context.clientIp ?? '127.0.0.1',
         ...(context.previewToken !== undefined && {previewToken: context.previewToken}),
         ...(context.userToken !== undefined && {userToken: context.userToken}),
@@ -54,16 +92,10 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
             }
             : {}
         ),
-        ...getEnvEntry('baseEndpointUrl', process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL),
-        timeout: getDefaultFetchTimeout(),
         extra: {
             cache: 'no-store',
         },
+        ...commonOptions,
         ...rest,
-        logger: rest.logger ?? (
-            getEnvFlag(process.env.NEXT_PUBLIC_CROCT_DEBUG)
-                ? new ConsoleLogger()
-                : FilteredLogger.include(new ConsoleLogger(), ['warn', 'error'])
-        ),
     });
 }
