@@ -33,9 +33,7 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
         clientId: clientId,
     };
 
-    const locale = headers.get(Header.PREFERRED_LOCALE)
-        ?? getEnvValue(process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE)
-        ?? null;
+    const locale = getPreferredLocale(headers);
 
     if (locale !== null) {
         context.preferredLocale = locale;
@@ -78,6 +76,16 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
     }
 
     return context;
+}
+
+export function resolvePreferredLocale(route?: RouteContext): string|null {
+    return getPreferredLocale(getHeaders(route));
+}
+
+function getPreferredLocale(headers: HeaderReader): string|null {
+    return headers.get(Header.PREFERRED_LOCALE)
+        ?? getEnvValue(process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE)
+        ?? null;
 }
 
 /**

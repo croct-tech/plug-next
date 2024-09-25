@@ -13,7 +13,7 @@ export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOption
 };
 
 export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
-    const {route, ...rest} = options;
+    const {route, logger, ...rest} = options;
 
     let context: RequestContext;
 
@@ -32,6 +32,8 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
         return Promise.reject(error);
     }
 
+    const timeout = getDefaultFetchTimeout();
+
     return executeQuery<T>(query, {
         apiKey: getApiKey(),
         clientIp: context.clientIp ?? '127.0.0.1',
@@ -40,16 +42,16 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
         ...(context.clientId !== undefined && {clientId: context.clientId}),
         ...(context.clientAgent !== undefined && {clientAgent: context.clientAgent}),
         ...getEnvEntry('baseEndpointUrl', process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL),
-        timeout: getDefaultFetchTimeout(),
+        ...(timeout !== undefined && {timeout: timeout}),
         extra: {
             cache: 'no-store',
         },
-        ...rest,
-        logger: rest.logger ?? (
+        logger: logger ?? (
             getEnvFlag(process.env.NEXT_PUBLIC_CROCT_DEBUG)
                 ? new ConsoleLogger()
                 : FilteredLogger.include(new ConsoleLogger(), ['warn', 'error'])
         ),
+        ...rest,
         ...(context.uri !== undefined
             ? {
                 context: {
