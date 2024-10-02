@@ -27,6 +27,7 @@ describe('<CroctProvider />', () => {
 
         delete process.env.NEXT_PUBLIC_CROCT_APP_ID;
         delete process.env.NEXT_PUBLIC_CROCT_DEBUG;
+        delete process.env.NEXT_PUBLIC_CROCT_TEST;
         delete process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL;
         delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT;
         delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE;
@@ -69,6 +70,7 @@ describe('<CroctProvider />', () => {
     it('should allow overriding the environment configuration', () => {
         process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
         process.env.NEXT_PUBLIC_CROCT_DEBUG = 'true';
+        process.env.NEXT_PUBLIC_CROCT_TEST = 'true';
         process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL = 'https://example.com';
         process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT = '3000';
         process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'es';
@@ -76,6 +78,7 @@ describe('<CroctProvider />', () => {
         const config = {
             appId: '11111111-1111-1111-1111-111111111111',
             debug: false,
+            test: false,
             baseEndpointUrl: 'https://override.com',
             defaultFetchTimeout: 2000,
             defaultPreferredLocale: 'en',
@@ -101,6 +104,7 @@ describe('<CroctProvider />', () => {
             {
                 appId: config.appId,
                 debug: config.debug,
+                test: config.test,
                 cookie: config.cookie,
                 baseEndpointUrl: config.baseEndpointUrl,
                 defaultFetchTimeout: config.defaultFetchTimeout,
@@ -133,6 +137,20 @@ describe('<CroctProvider />', () => {
         expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
             expect.objectContaining({
                 debug: true,
+            }),
+            expect.anything(),
+        );
+    });
+
+    it('should detect the test mode from the environment', () => {
+        process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+        process.env.NEXT_PUBLIC_CROCT_TEST = 'true';
+
+        render(<CroctProvider />);
+
+        expect(UnderlyingProvider).toHaveBeenCalledWith<[ResolvedProviderProps, any]>(
+            expect.objectContaining({
+                test: true,
             }),
             expect.anything(),
         );
