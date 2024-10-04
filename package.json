@@ -40,7 +40,7 @@
     "@croct/plug": "^0.16.2",
     "@croct/plug-react": "^0.8.1",
     "@croct/sdk": "^0.17.4",
-    "cookie": "^0.6.0",
+    "cookie": "^0.7.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
