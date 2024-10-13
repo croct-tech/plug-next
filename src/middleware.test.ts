@@ -1056,7 +1056,7 @@ describe('middleware', () => {
         '/foo/bar/baz/qux',
     ])('should intercept requests to "%s"', url => {
         expect(config.matcher).toHaveLength(1);
-        expect(new RegExp(config.matcher[0]).test(url)).toBe(true);
+        expect(new RegExp(config.matcher[0].source).test(url)).toBe(true);
     });
 
     it.each<string>([
@@ -1066,6 +1066,6 @@ describe('middleware', () => {
         '/favicon.ico',
     ])('should not intercept requests to "%s"', url => {
         expect(config.matcher).toHaveLength(1);
-        expect(new RegExp(config.matcher[0]).test(url)).toBe(false);
+        expect(new RegExp(config.matcher[0].source).test(url)).toBe(false);
     });
 });

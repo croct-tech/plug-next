@@ -41,6 +41,7 @@
     "@croct/plug-react": "^0.9.0",
     "@croct/sdk": "^0.17.4",
     "cookie": "^0.7.0",
+    "path-to-regexp": "^8.2.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
