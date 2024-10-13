@@ -43,8 +43,9 @@ describe('getRequestContext', () => {
 
     it('should throw an error when the client ID is missing', () => {
         expect(() => getRequestContext(new Headers(), createCookieJar())).toThrow(
-            'Croct\'s Client ID is missing. Did you forget to configure Croct\'s middleware? '
-              + 'For help, see: https://croct.help/sdk/nextjs/missing-middleware',
+            'Croct\'s Client ID is missing. Did you configure Croct\'s middleware? '
+            + 'If you\'re using a `matcher`, ensure it includes all page routes. '
+            + 'For help, see: https://croct.help/sdk/nextjs/missing-middleware',
         );
     });
 
