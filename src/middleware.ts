@@ -57,6 +57,7 @@ type CroctMiddlewareParams =
 
 export function withCroct(): NextMiddleware;
 export function withCroct(next: NextMiddleware): NextMiddleware;
+// eslint-disable-next-line @typescript-eslint/no-shadow -- False positive
 export function withCroct(next: NextMiddleware, matcher: MiddlewareMatcher): NextMiddleware;
 export function withCroct(props: CroctMiddlewareOptions): NextMiddleware;
 
@@ -69,10 +70,10 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
         return withCroct({next: args[0], matcher: args[1]});
     }
 
-    const {next, matcher = [], localeResolver, userIdResolver} = args[0];
+    const {next, matcher: matchers = [], localeResolver, userIdResolver} = args[0];
 
-    const matchesMiddleware = createMatcher((Array.isArray(matcher) ? matcher : [matcher]).flatMap(definition => {
-        if (definition === matcher) {
+    const matchesMiddleware = createMatcher((Array.isArray(matchers) ? matchers : [matchers]).flatMap(definition => {
+        if (definition === matchers) {
             // Exclude the default matcher from the list of matchers
             return [];
         }
