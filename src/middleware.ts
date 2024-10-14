@@ -16,7 +16,7 @@ import {createMatcher, RouterCriteria} from '@/matcher';
 
 const matcherRegex = /^(?!\/(api|_next\/static|_next\/image|favicon.ico)).*/;
 
-const defaultMatcher = {
+export const matcher: RouterCriteria = {
     /*
      * Match all request paths except for the ones starting with:
      *
@@ -26,11 +26,11 @@ const defaultMatcher = {
      * - favicon.ico (favicon file)
      */
     source: matcherRegex.source,
-} satisfies RouterCriteria;
+};
 
 // Ignore static assets
 export const config = {
-    matcher: [defaultMatcher],
+    matcher: [matcher],
 };
 
 const CLIENT_ID_PATTERN = /^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{32})$/;
@@ -72,7 +72,7 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
     const {next, matcher = [], localeResolver, userIdResolver} = args[0];
 
     const matchesMiddleware = createMatcher((Array.isArray(matcher) ? matcher : [matcher]).flatMap(definition => {
-        if (definition === defaultMatcher) {
+        if (definition === matcher) {
             // Exclude the default matcher from the list of matchers
             return [];
         }
