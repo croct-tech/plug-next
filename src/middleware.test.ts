@@ -146,12 +146,11 @@ describe('middleware', () => {
         jest.useRealTimers();
     });
 
-    const previewToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0.eyJpc3MiOiJodHRwczovL2Nyb2N0LmlvIiwi'
-        + 'YXVkIjoiaHR0cHM6Ly9jcm9jdC5pbyIsImlhdCI6MTQ0MDk3OTEwMCwiZXhwIjoxNDQwOTc5M'
-        + 'jAwLCJtZXRhZGF0YSI6eyJleHBlcmllbmNlTmFtZSI6IkRldmVsb3BlcnMgZXhwZXJpZW5jZS'
-        + 'IsImV4cGVyaW1lbnROYW1lIjoiRGV2ZWxvcGVycyBleHBlcmltZW50IiwiYXVkaWVuY2VOYW1l'
-        + 'IjoiRGV2ZWxvcGVycyBhdWRpZW5jZSIsInZhcmlhbnROYW1lIjoiSmF2YVNjcmlwdCBEZXZlbG'
-        + '9wZXJzIn19.';
+    const previewToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Nyb2N0LmlvIiwiYXVkIjoiaHR0cH'
+       + 'M6Ly9jcm9jdC5pbyIsImlhdCI6MTQ0MDk3OTEwMCwiZXhwIjoxNDQwOTc5MjAwLCJtZXRhZGF0YSI6eyJleHBlcmllbmN'
+       + 'lTmFtZSI6IkRldmVsb3BlcnMgZXhwZXJpZW5jZSIsImV4cGVyaW1lbnROYW1lIjoiRGV2ZWxvcGVycyBleHBlcmltZW50'
+       + 'IiwiYXVkaWVuY2VOYW1lIjoi8J-RqOKAjfCfkrsgRGV2ZWxvcGVycyBhdWRpZW5jZSIsInZhcmlhbnROYW1lIjoiSmF2Y'
+       + 'VNjcmlwdCBEZXZlbG9wZXJzIn19.ZmfcfhPoxFs0cY86ixGBCDab3rPSMoUG4cboWX0NEOY';
 
     const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 

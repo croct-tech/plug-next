@@ -1,7 +1,8 @@
-import {NextRequest, NextMiddleware, NextResponse} from 'next/server';
+import {NextMiddleware, NextRequest, NextResponse} from 'next/server';
 import cookie from 'cookie';
 import {v4 as uuidv4} from 'uuid';
 import {Token} from '@croct/sdk/token';
+import {base64UrlDecode} from '@croct/sdk/base64Url';
 import {Header, QueryParameter} from '@/config/http';
 import {
     CookieOptions,
@@ -181,7 +182,7 @@ function isPreviewTokenValid(token: unknown): token is string {
     const now = Math.floor(Date.now() / 1000);
 
     try {
-        const payload = JSON.parse(atob(token.split('.')[1]).toString());
+        const payload = JSON.parse(base64UrlDecode(token.split('.')[1]).toString());
 
         return Number.isInteger(payload.exp) && payload.exp > now;
     } catch {
