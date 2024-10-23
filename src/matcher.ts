@@ -1,4 +1,4 @@
-import {NextRequest} from 'next/server';
+import type {NextRequest} from 'next/server';
 import {pathToRegexp} from 'path-to-regexp';
 
 export type RouteCondition = {

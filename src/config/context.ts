@@ -15,16 +15,10 @@ export type RequestContext = {
     preferredLocale?: string,
 };
 
-/**
- * @internal
- */
 export function resolveRequestContext(route?: RouteContext): RequestContext {
     return getRequestContext(getHeaders(route), getCookies(route));
 }
 
-/**
- * @internal
- */
 export function getRequestContext(headers: HeaderReader, cookies: CookieReader): RequestContext {
     const clientId = headers.get(Header.CLIENT_ID);
 
@@ -85,9 +79,6 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
     return context;
 }
 
-/**
- * @internal
- */
 export function resolvePreferredLocale(route?: RouteContext): string|null {
     return getPreferredLocale(getHeaders(route));
 }

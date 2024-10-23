@@ -1,8 +1,5 @@
 const PATTERN = /^[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}$/;
 
-/**
- * @internal
- */
 export function getAppId(): string {
     const appId = process.env.NEXT_PUBLIC_CROCT_APP_ID ?? '';
 

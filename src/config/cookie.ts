@@ -8,9 +8,6 @@ export type CookieOptions = {
     httpOnly?: boolean,
 };
 
-/**
- * @internal
- */
 export function getClientIdCookieOptions(): CookieOptions {
     const duration = normalizeValue(process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION, `${365 * 24 * 60 * 60}`);
     const parsedDuration = Number.parseInt(duration, 10);
@@ -33,9 +30,6 @@ export function getClientIdCookieOptions(): CookieOptions {
     };
 }
 
-/**
- * @internal
- */
 export function getUserTokenCookieOptions(): CookieOptions {
     const duration = normalizeValue(process.env.NEXT_PUBLIC_CROCT_USER_TOKEN_COOKIE_DURATION, `${7 * 24 * 60 * 60}`);
     const parsedDuration = Number.parseInt(duration, 10);
@@ -58,9 +52,6 @@ export function getUserTokenCookieOptions(): CookieOptions {
     };
 }
 
-/**
- * @internal
- */
 export function getPreviewCookieOptions(): CookieOptions {
     const domain = normalizeValue(process.env.NEXT_PUBLIC_CROCT_PREVIEW_TOKEN_COOKIE_DOMAIN, '');
 

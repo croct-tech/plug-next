@@ -1,8 +1,5 @@
 const DEFAULT_FETCH_TIMEOUT = 2000;
 
-/**
- * @internal
- */
 export function getDefaultFetchTimeout(): number | undefined {
     const timeout = process.env.NEXT_PUBLIC_CROCT_DEFAULT_FETCH_TIMEOUT;
 
