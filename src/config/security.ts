@@ -1,6 +1,6 @@
 import {ApiKey} from '@croct/sdk/apiKey';
 import {Token} from '@croct/sdk/token';
-import {v4 as uuid} from 'uuid';
+import {randomUUID} from 'node:crypto';
 import {getAppId} from '@/config/appId';
 
 export function getApiKey(): ApiKey {
@@ -64,7 +64,7 @@ export function issueToken(userId: string|null = null): Promise<Token> {
         .withDuration(getTokenDuration());
 
     if (isUserTokenAuthenticationEnabled()) {
-        return token.withTokenId(uuid())
+        return token.withTokenId(randomUUID())
             .signedWith(getAuthenticationKey());
     }
 

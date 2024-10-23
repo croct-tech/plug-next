@@ -1,17 +1,18 @@
 import {NextRequest, NextResponse, NextFetchEvent, NextMiddleware} from 'next/server';
 import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
-import {v4 as uuid} from 'uuid';
 import {ApiKey} from '@croct/sdk/apiKey';
 import * as process from 'node:process';
+import {randomUUID} from 'node:crypto';
 import {Header, QueryParameter} from '@/config/http';
 import {config, withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
 
 jest.mock(
-    'uuid',
+    'crypto',
     () => ({
-        v4: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
+        ...jest.requireActual('crypto'),
+        randomUUID: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
     }),
 );
 
@@ -1008,7 +1009,7 @@ describe('middleware', () => {
             : null;
 
         const oldUserToken = oldUnsignedToken !== null && requestToken?.signed === true
-            ? await oldUnsignedToken.withTokenId(uuid())
+            ? await oldUnsignedToken.withTokenId(randomUUID())
                 .signedWith(oldApiKey)
             : oldUnsignedToken;
 
