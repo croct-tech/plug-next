@@ -97,5 +97,10 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
         },
         ...commonOptions,
         ...rest,
+    }).catch(error => {
+        const locale = options.preferredLocale ?? null;
+        const file = `${slotId}${locale !== null ? `.${locale}` : ''}.json`;
+
+        return import(`@croct/content/${file}`).catch(() => Promise.reject(error));
     });
 }
