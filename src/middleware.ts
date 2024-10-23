@@ -2,7 +2,7 @@ import {type NextRequest, type NextMiddleware, type NextFetchEvent, NextResponse
 import cookie from 'cookie';
 import {Token} from '@croct/sdk/token';
 import {base64UrlDecode} from '@croct/sdk/base64Url';
-import {randomUUID} from 'node:crypto';
+import {randomUUID} from 'crypto';
 import {Header, QueryParameter} from '@/config/http';
 import {
     CookieOptions,
