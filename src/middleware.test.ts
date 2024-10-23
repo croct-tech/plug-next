@@ -1,17 +1,17 @@
 import {NextRequest, NextResponse, NextFetchEvent, NextMiddleware} from 'next/server';
 import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
-import {v4 as uuid} from 'uuid';
 import {ApiKey} from '@croct/sdk/apiKey';
 import * as process from 'node:process';
 import {Header, QueryParameter} from '@/config/http';
-import {config, withCroct} from '@/middleware';
+import {config, matcher, withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
 
 jest.mock(
-    'uuid',
+    'crypto',
     () => ({
-        v4: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
+        ...jest.requireActual('crypto'),
+        randomUUID: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
     }),
 );
 
@@ -1008,7 +1008,7 @@ describe('middleware', () => {
             : null;
 
         const oldUserToken = oldUnsignedToken !== null && requestToken?.signed === true
-            ? await oldUnsignedToken.withTokenId(uuid())
+            ? await oldUnsignedToken.withTokenId(crypto.randomUUID())
                 .signedWith(oldApiKey)
             : oldUnsignedToken;
 
@@ -1056,7 +1056,7 @@ describe('middleware', () => {
         '/foo/bar/baz/qux',
     ])('should intercept requests to "%s"', url => {
         expect(config.matcher).toHaveLength(1);
-        expect(new RegExp(config.matcher[0]).test(url)).toBe(true);
+        expect(new RegExp(matcher.source).test(url)).toBe(true);
     });
 
     it.each<string>([
@@ -1066,6 +1066,6 @@ describe('middleware', () => {
         '/favicon.ico',
     ])('should not intercept requests to "%s"', url => {
         expect(config.matcher).toHaveLength(1);
-        expect(new RegExp(config.matcher[0]).test(url)).toBe(false);
+        expect(new RegExp(matcher.source).test(url)).toBe(false);
     });
 });
