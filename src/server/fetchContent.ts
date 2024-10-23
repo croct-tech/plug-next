@@ -97,10 +97,14 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
         },
         ...commonOptions,
         ...rest,
-    }).catch(error => {
+    }).catch(async error => {
         const locale = options.preferredLocale ?? null;
         const file = `${slotId}${locale !== null ? `.${locale}` : ''}.json`;
 
-        return import(`@croct/content/${file}`).catch(() => Promise.reject(error));
+        try {
+            return (await import(`@croct/content/slot/${file}`)).default;
+        } catch {
+            throw error;
+        }
     });
 }
