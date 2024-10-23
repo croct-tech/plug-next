@@ -1,6 +1,6 @@
 import {ApiKey} from '@croct/sdk/apiKey';
 import {Token} from '@croct/sdk/token';
-import {randomUUID} from 'node:crypto';
+import {randomUUID} from 'crypto';
 import {getAppId} from '@/config/appId';
 
 export function getApiKey(): ApiKey {

@@ -3,7 +3,7 @@ import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
 import {ApiKey} from '@croct/sdk/apiKey';
 import * as process from 'node:process';
-import {randomUUID} from 'node:crypto';
+import {randomUUID} from 'crypto';
 import {Header, QueryParameter} from '@/config/http';
 import {config, matcher, withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
