@@ -5,7 +5,7 @@ import {ApiKey} from '@croct/sdk/apiKey';
 import * as process from 'node:process';
 import {randomUUID} from 'node:crypto';
 import {Header, QueryParameter} from '@/config/http';
-import {config, withCroct} from '@/middleware';
+import {config, matcher, withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
 
 jest.mock(
@@ -1057,7 +1057,7 @@ describe('middleware', () => {
         '/foo/bar/baz/qux',
     ])('should intercept requests to "%s"', url => {
         expect(config.matcher).toHaveLength(1);
-        expect(new RegExp(config.matcher[0].source).test(url)).toBe(true);
+        expect(new RegExp(matcher.source).test(url)).toBe(true);
     });
 
     it.each<string>([
@@ -1067,6 +1067,6 @@ describe('middleware', () => {
         '/favicon.ico',
     ])('should not intercept requests to "%s"', url => {
         expect(config.matcher).toHaveLength(1);
-        expect(new RegExp(config.matcher[0].source).test(url)).toBe(false);
+        expect(new RegExp(matcher.source).test(url)).toBe(false);
     });
 });

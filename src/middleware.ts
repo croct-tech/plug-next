@@ -16,7 +16,7 @@ import {createMatcher, RouterCriteria} from '@/matcher';
 
 const matcherRegex = /^(?!\/(api|_next\/static|_next\/image|favicon.ico)).*/;
 
-export const matcher: RouterCriteria = {
+export const matcher = {
     /*
      * Match all request paths except for the ones starting with:
      *
@@ -26,7 +26,7 @@ export const matcher: RouterCriteria = {
      * - favicon.ico (favicon file)
      */
     source: matcherRegex.source,
-};
+} satisfies RouterCriteria;
 
 // Ignore static assets
 export const config = {
