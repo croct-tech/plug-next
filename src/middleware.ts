@@ -1,9 +1,8 @@
-import {NextRequest, NextMiddleware, NextResponse, NextFetchEvent} from 'next/server';
+import {type NextRequest, type NextMiddleware, type NextFetchEvent, NextResponse} from 'next/server';
 import cookie from 'cookie';
 import {Token} from '@croct/sdk/token';
 import {base64UrlDecode} from '@croct/sdk/base64Url';
-import {Headers} from 'next/dist/compiled/@edge-runtime/primitives';
-import {randomUUID} from 'crypto';
+import {randomUUID} from 'node:crypto';
 import {Header, QueryParameter} from '@/config/http';
 import {
     CookieOptions,
