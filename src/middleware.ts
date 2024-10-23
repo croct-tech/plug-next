@@ -2,7 +2,6 @@ import {type NextRequest, type NextMiddleware, type NextFetchEvent, NextResponse
 import cookie from 'cookie';
 import {Token} from '@croct/sdk/token';
 import {base64UrlDecode} from '@croct/sdk/base64Url';
-import {randomUUID} from 'crypto';
 import {Header, QueryParameter} from '@/config/http';
 import {
     CookieOptions,
@@ -151,7 +150,7 @@ function getClientId(request: NextRequest, cookieName: string): string {
     const clientId = request.cookies.get(cookieName)?.value ?? null;
 
     if (clientId === null || !CLIENT_ID_PATTERN.test(clientId)) {
-        return randomUUID();
+        return crypto.randomUUID();
     }
 
     return clientId;

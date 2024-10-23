@@ -3,7 +3,6 @@ import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
 import {ApiKey} from '@croct/sdk/apiKey';
 import * as process from 'node:process';
-import {randomUUID} from 'crypto';
 import {Header, QueryParameter} from '@/config/http';
 import {config, matcher, withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
@@ -1009,7 +1008,7 @@ describe('middleware', () => {
             : null;
 
         const oldUserToken = oldUnsignedToken !== null && requestToken?.signed === true
-            ? await oldUnsignedToken.withTokenId(randomUUID())
+            ? await oldUnsignedToken.withTokenId(crypto.randomUUID())
                 .signedWith(oldApiKey)
             : oldUnsignedToken;
 
