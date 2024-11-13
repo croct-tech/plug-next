@@ -295,7 +295,9 @@ describe('fetchContent', () => {
         });
 
         await expect(fetchContent('slot-id')).rejects.toThrow(
-            'fetchContent() requires specifying the `route` option outside app routes. '
+            'Error resolving request context: next/headers requires app router. '
+            + 'This error usually occurs when no `route` option is specified when fetchContent() '
+            + 'is called outside of app routes. '
             + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
         );
     });
