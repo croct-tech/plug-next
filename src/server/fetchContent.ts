@@ -7,6 +7,7 @@ import {
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
+import {formatCause} from '@croct/sdk/error';
 import {getApiKey} from '@/config/security';
 import {RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
@@ -65,7 +66,9 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
         if (route === undefined) {
             return Promise.reject(
                 new Error(
-                    'fetchContent() requires specifying the `route` option outside app routes. '
+                    `Error resolving request context: ${formatCause(error)}. `
+                    + 'This error usually occurs when no `route` option is specified when fetchContent() '
+                    + 'is called outside of app routes. '
                     + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
                 ),
             );

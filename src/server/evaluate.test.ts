@@ -192,7 +192,9 @@ describe('evaluation', () => {
             });
 
             await expect(evaluate('true')).rejects.toThrow(
-                'evaluate() requires specifying the `route` option outside app routes. '
+                'Error resolving request context: next/headers requires app router. '
+                + 'This error usually occurs when no `route` option is specified when evaluate() '
+                + 'is called outside of app routes. '
                 + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
             );
         });
