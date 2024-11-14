@@ -3,6 +3,7 @@ import type {JsonValue} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {formatCause} from '@croct/sdk/error';
+import {isDynamicServerError} from 'next/dist/client/components/hooks-server-context';
 import {getApiKey} from '@/config/security';
 import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
@@ -21,18 +22,18 @@ export function evaluate<T extends JsonValue>(query: string, options: Evaluation
     try {
         context = resolveRequestContext(route);
     } catch (error) {
-        if (route === undefined) {
-            return Promise.reject(
-                new Error(
-                    `Error resolving request context: ${formatCause(error)}. `
-                    + 'This error usually occurs when no `route` option is specified when evaluate() '
-                    + 'is called outside of app routes. '
-                    + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
-                ),
-            );
+        if (isDynamicServerError(error) || route !== undefined) {
+            return Promise.reject(error);
         }
 
-        return Promise.reject(error);
+        return Promise.reject(
+            new Error(
+                `Error resolving request context: ${formatCause(error)}. `
+                + 'This error typically occurs when evaluate() is called outside of app routes '
+                + 'without specifying the `route` option. '
+                + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
+            ),
+        );
     }
 
     const timeout = getDefaultFetchTimeout();
