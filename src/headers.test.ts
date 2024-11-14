@@ -34,11 +34,24 @@ describe('getHeaders', () => {
     });
 
     it('should require the request context if next/headers is not available', () => {
+        const error = new Error('next/headers requires app router');
+
         mockHeaders.mockImplementation(() => {
-            throw new Error('next/headers requires app router');
+            throw error;
         });
 
-        expect(() => getHeaders()).toThrow('No route context found.');
+        let actualError: unknown;
+
+        try {
+            getHeaders();
+        } catch (caughtError) {
+            actualError = caughtError;
+        }
+
+        // Ensure it rethrows the exact same error.
+        // It is important because Next uses the error type to detect dynamic routes based
+        // on usage of headers or cookies
+        expect(actualError).toBe(error);
     });
 
     type RequestContextScenario = {
@@ -138,11 +151,24 @@ describe('getCookies', () => {
     });
 
     it('should require the request context if next/headers is not available', () => {
+        const error = new Error('next/headers requires app router');
+
         mockCookies.mockImplementation(() => {
-            throw new Error('next/headers requires app router');
+            throw error;
         });
 
-        expect(() => getCookies()).toThrow('No route context found.');
+        let actualError: unknown;
+
+        try {
+            getCookies();
+        } catch (caughtError) {
+            actualError = caughtError;
+        }
+
+        // Ensure it rethrows the exact same error.
+        // It is important because Next uses the error type to detect dynamic routes based
+        // on usage of headers or cookies
+        expect(actualError).toBe(error);
     });
 
     type RequestContextScenario = {

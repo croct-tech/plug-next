@@ -36,9 +36,9 @@ export function getHeaders(route?: RouteContext): HeaderReader {
         const {headers} = importNextHeaders();
 
         return headers();
-    } catch {
+    } catch (error) {
         if (route === undefined) {
-            throw new Error('No route context found.');
+            throw error;
         }
     }
 
@@ -70,9 +70,9 @@ export function getCookies(route?: RouteContext): CookieAccessor {
         const {cookies} = importNextHeaders();
 
         return cookies();
-    } catch {
+    } catch (error) {
         if (route === undefined) {
-            throw new Error('No route context found.');
+            throw error;
         }
     }
 

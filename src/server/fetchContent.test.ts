@@ -4,6 +4,7 @@ import {FetchResponse} from '@croct/plug/plug';
 import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import type {NextRequest, NextResponse} from 'next/server';
+import {DynamicServerError} from 'next/dist/client/components/hooks-server-context';
 import {fetchContent, FetchOptions} from './fetchContent';
 import {RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
@@ -289,6 +290,16 @@ describe('fetchContent', () => {
         expect(resolvePreferredLocale).toHaveBeenCalledWith(route);
     });
 
+    it('should rethrow dynamic server errors', async () => {
+        const error = new DynamicServerError('cause');
+
+        jest.mocked(resolveRequestContext).mockImplementation(() => {
+            throw error;
+        });
+
+        await expect(fetchContent('slot-id')).rejects.toBe(error);
+    });
+
     it('should report an error if the route context is missing', async () => {
         jest.mocked(resolveRequestContext).mockImplementation(() => {
             throw new Error('next/headers requires app router');
@@ -296,8 +307,8 @@ describe('fetchContent', () => {
 
         await expect(fetchContent('slot-id')).rejects.toThrow(
             'Error resolving request context: next/headers requires app router. '
-            + 'This error usually occurs when no `route` option is specified when fetchContent() '
-            + 'is called outside of app routes. '
+            + 'This error typically occurs when fetchContent() is called outside of app routes without '
+            + 'specifying the `route` option. '
             + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
         );
     });
