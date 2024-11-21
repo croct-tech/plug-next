@@ -4,7 +4,6 @@ import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {headers} from 'next/headers';
 import {NextRequest, NextResponse} from 'next/server';
-import {DynamicServerError} from 'next/dist/client/components/hooks-server-context';
 import {cql, evaluate, EvaluationOptions} from './evaluate';
 import {resolveRequestContext, RequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
@@ -188,7 +187,15 @@ describe('evaluation', () => {
         });
 
         it('should rethrow dynamic server errors', async () => {
-            const error = new DynamicServerError('cause');
+            const error = new class DynamicServerError extends Error {
+                public readonly digest = 'DYNAMIC_SERVER_USAGE';
+
+                public constructor() {
+                    super('cause');
+
+                    Object.setPrototypeOf(this, new.target.prototype);
+                }
+            }();
 
             jest.mocked(resolveRequestContext).mockImplementation(() => {
                 throw error;
