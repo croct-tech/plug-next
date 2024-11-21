@@ -8,12 +8,12 @@ import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {formatCause} from '@croct/sdk/error';
-import {isDynamicServerError} from 'next/dist/client/components/hooks-server-context';
 import {getApiKey} from '@/config/security';
 import {RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {RouteContext} from '@/headers';
 import {getEnvEntry, getEnvFlag} from '@/config/env';
+import {isDynamicServerError} from '@/errors';
 
 export type DynamicContentOptions<T extends JsonObject = JsonObject> = Omit<DynamicOptions<T>, 'apiKey' | 'appId'>;
 
