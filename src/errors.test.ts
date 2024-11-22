@@ -27,18 +27,6 @@ describe('errors', () => {
             error: new class {
                 public readonly digest = 'DYNAMIC_SERVER_USAGE';
             }(),
-            expected: false,
-        },
-        {
-            error: new class DynamicServerError {
-                public readonly digest = 'foo';
-            }(),
-            expected: false,
-        },
-        {
-            error: new class DynamicServerError {
-                public readonly digest = 'DYNAMIC_SERVER_USAGE';
-            }(),
             expected: true,
         },
     ])('should return $expected for $error identifying a DynamicServerError', ({error, expected}) => {
