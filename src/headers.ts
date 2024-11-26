@@ -31,6 +31,9 @@ export type RouteContext = {
     res: PartialResponse,
 };
 
+/**
+ * @internal
+ */
 export function getHeaders(route?: RouteContext): HeaderReader {
     try {
         const {headers} = importNextHeaders();
@@ -65,6 +68,9 @@ export function getHeaders(route?: RouteContext): HeaderReader {
     };
 }
 
+/**
+ * @internal
+ */
 export function getCookies(route?: RouteContext): CookieAccessor {
     try {
         const {cookies} = importNextHeaders();
@@ -151,14 +157,23 @@ export function getCookies(route?: RouteContext): CookieAccessor {
     };
 }
 
+/**
+ * @internal
+ */
 function isNextRequestHeaders(headers: PartialRequest['headers']): headers is NextRequest['headers'] {
     return headers.append !== undefined;
 }
 
+/**
+ * @internal
+ */
 function isNextRequestCookies(cookies: PartialRequest['cookies']): cookies is NextRequest['cookies'] {
     return cookies.get !== undefined || cookies.set !== undefined;
 }
 
+/**
+ * @internal
+ */
 export function isAppRouter(): boolean {
     try {
         const {headers} = importNextHeaders();
