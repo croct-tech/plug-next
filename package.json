@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@croct/plug": "^0.16.2",
-    "@croct/plug-react": "https://pkg.pr.new/@croct/plug-react@520",
+    "@croct/plug-react": "^0.10.0",
     "@croct/sdk": "^0.17.4",
     "@vercel/functions": "^1.5.2",
     "cookie": "^0.7.0",
