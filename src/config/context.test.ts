@@ -1,11 +1,11 @@
-import type {cookies} from 'next/headers';
+import type {UnsafeUnwrappedCookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
 import {getRequestContext, RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
 import {getCookies, getHeaders, PartialRequest, PartialResponse, RouteContext} from '@/headers';
 
-type ReadonlyCookies = ReturnType<typeof cookies>;
+type ReadonlyCookies = UnsafeUnwrappedCookies;
 
 function createCookieJar(cookies: Record<string, string> = {}): ReadonlyCookies {
     const jar: Record<string, string> = {...cookies};

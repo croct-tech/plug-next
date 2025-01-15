@@ -1,16 +1,16 @@
 import type {ServerResponse} from 'http';
 import type {NextRequest, NextResponse} from 'next/server';
 import type {GetServerSidePropsContext, NextApiRequest, NextApiResponse} from 'next';
-import type {cookies, headers} from 'next/headers';
+import type {UnsafeUnwrappedHeaders, UnsafeUnwrappedCookies} from 'next/headers';
 import cookie from 'cookie';
 
-export type HeaderReader = Pick<ReturnType<typeof headers>, 'get'>;
+export type HeaderReader = Pick<UnsafeUnwrappedHeaders, 'get'>;
 
 export type CookieReader = {
     get: (name: string) => {value: string}|undefined,
 };
 
-export type CookieOptions = NonNullable<Parameters<ReturnType<typeof cookies>['set']>[2]>;
+export type CookieOptions = NonNullable<Parameters<UnsafeUnwrappedCookies['set']>[2]>;
 
 export type CookieAccessor = CookieReader & {
     set: (name: string, value: string, options?: CookieOptions) => void,
@@ -35,7 +35,7 @@ export function getHeaders(route?: RouteContext): HeaderReader {
     try {
         const {headers} = importNextHeaders();
 
-        return headers();
+        return headers() as unknown as UnsafeUnwrappedHeaders;
     } catch (error) {
         if (route === undefined) {
             throw error;
@@ -69,7 +69,7 @@ export function getCookies(route?: RouteContext): CookieAccessor {
     try {
         const {cookies} = importNextHeaders();
 
-        return cookies();
+        return cookies() as unknown as UnsafeUnwrappedCookies;
     } catch (error) {
         if (route === undefined) {
             throw error;

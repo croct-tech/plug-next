@@ -1,4 +1,5 @@
 import {NextMiddleware, NextRequest, NextResponse} from 'next/server';
+import {ipAddress} from '@vercel/functions';
 import cookie from 'cookie';
 import {v4 as uuidv4} from 'uuid';
 import {Token} from '@croct/sdk/token';
@@ -76,8 +77,10 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
             headers.set(Header.PREFERRED_LOCALE, locale);
         }
 
-        if (request.ip !== undefined) {
-            headers.set(Header.CLIENT_IP, request.ip);
+        const ip = ipAddress(request);
+
+        if (ip !== undefined) {
+            headers.set(Header.CLIENT_IP, ip);
         }
 
         const previewToken = getPreviewToken(request, previewCookie.name);

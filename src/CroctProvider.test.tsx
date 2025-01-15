@@ -63,7 +63,7 @@ describe('<CroctProvider />', () => {
                     previewToken: getPreviewCookieOptions(),
                 },
             },
-            expect.anything(),
+            undefined,
         );
     });
 
@@ -111,7 +111,7 @@ describe('<CroctProvider />', () => {
                 defaultPreferredLocale: config.defaultPreferredLocale,
                 disableCidMirroring: true,
             },
-            expect.anything(),
+            undefined,
         );
     });
 
@@ -124,7 +124,7 @@ describe('<CroctProvider />', () => {
             expect.objectContaining({
                 appId: process.env.NEXT_PUBLIC_CROCT_APP_ID,
             }),
-            expect.anything(),
+            undefined,
         );
     });
 
@@ -138,7 +138,7 @@ describe('<CroctProvider />', () => {
             expect.objectContaining({
                 debug: true,
             }),
-            expect.anything(),
+            undefined,
         );
     });
 
@@ -152,7 +152,7 @@ describe('<CroctProvider />', () => {
             expect.objectContaining({
                 test: true,
             }),
-            expect.anything(),
+            undefined,
         );
     });
 
@@ -166,7 +166,7 @@ describe('<CroctProvider />', () => {
             expect.objectContaining({
                 baseEndpointUrl: process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL,
             }),
-            expect.anything(),
+            undefined,
         );
     });
 
@@ -180,7 +180,7 @@ describe('<CroctProvider />', () => {
             expect.objectContaining({
                 defaultFetchTimeout: 3000,
             }),
-            expect.anything(),
+            undefined,
         );
     });
 
@@ -194,7 +194,7 @@ describe('<CroctProvider />', () => {
             expect.objectContaining({
                 defaultPreferredLocale: process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE,
             }),
-            expect.anything(),
+            undefined,
         );
     });
 });
