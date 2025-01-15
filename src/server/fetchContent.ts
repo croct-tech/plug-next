@@ -23,7 +23,7 @@ export type FetchOptions<T extends JsonObject = JsonObject> = (DynamicContentOpt
     route?: RouteContext,
 };
 
-export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
+export async function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     slotId: I,
     options: FetchOptions<SlotContent<I, C>> = {},
 ): Promise<FetchResponse<I, C>> {
@@ -46,7 +46,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
 
         if (preferredLocale === null) {
             try {
-                preferredLocale = resolvePreferredLocale(route);
+                preferredLocale = await resolvePreferredLocale(route);
             } catch {
                 // Static content can be fetched from anywhere
             }
@@ -62,7 +62,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     let context: RequestContext;
 
     try {
-        context = resolveRequestContext(route);
+        context = await resolveRequestContext(route);
     } catch (error) {
         if (isDynamicServerError(error) || route !== undefined) {
             return Promise.reject(error);

@@ -6,7 +6,7 @@ export async function anonymize(context?: RouteContext): Promise<void> {
     let cookies: CookieAccessor;
 
     try {
-        cookies = getCookies(context);
+        cookies = await getCookies(context);
     } catch {
         throw new Error(
             'anonymize() requires specifying the `route` parameter outside app routes. '

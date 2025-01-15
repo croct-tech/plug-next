@@ -1,16 +1,16 @@
 import type {ServerResponse} from 'http';
 import type {NextRequest, NextResponse} from 'next/server';
 import type {GetServerSidePropsContext, NextApiRequest, NextApiResponse} from 'next';
-import type {UnsafeUnwrappedHeaders, UnsafeUnwrappedCookies} from 'next/headers';
+import type {cookies, headers} from 'next/headers';
 import cookie from 'cookie';
 
-export type HeaderReader = Pick<UnsafeUnwrappedHeaders, 'get'>;
+export type HeaderReader = Pick<Awaited<ReturnType<typeof headers>>, 'get'>;
 
 export type CookieReader = {
     get: (name: string) => {value: string}|undefined,
 };
 
-export type CookieOptions = NonNullable<Parameters<UnsafeUnwrappedCookies['set']>[2]>;
+export type CookieOptions = NonNullable<Parameters<Awaited<ReturnType<typeof cookies>>['set']>[2]>;
 
 export type CookieAccessor = CookieReader & {
     set: (name: string, value: string, options?: CookieOptions) => void,
@@ -31,18 +31,18 @@ export type RouteContext = {
     res: PartialResponse,
 };
 
-export function getHeaders(route?: RouteContext): HeaderReader {
+export function getHeaders(route?: RouteContext): Promise<HeaderReader> {
     try {
         const {headers} = importNextHeaders();
 
-        return headers() as unknown as UnsafeUnwrappedHeaders;
+        return headers();
     } catch (error) {
         if (route === undefined) {
             throw error;
         }
     }
 
-    return {
+    return Promise.resolve({
         get: (name: string): string|null => {
             const requestHeaders = route.req.headers;
 
@@ -62,21 +62,21 @@ export function getHeaders(route?: RouteContext): HeaderReader {
 
             return null;
         },
-    };
+    });
 }
 
-export function getCookies(route?: RouteContext): CookieAccessor {
+export function getCookies(route?: RouteContext): Promise<CookieAccessor> {
     try {
         const {cookies} = importNextHeaders();
 
-        return cookies() as unknown as UnsafeUnwrappedCookies;
+        return cookies();
     } catch (error) {
         if (route === undefined) {
             throw error;
         }
     }
 
-    return {
+    return Promise.resolve({
         get: (name: string): {value: string}|undefined => {
             const response = route.res;
 
@@ -148,7 +148,7 @@ export function getCookies(route?: RouteContext): CookieAccessor {
 
             response.setHeader('Set-Cookie', newValue);
         },
-    };
+    });
 }
 
 function isNextRequestHeaders(headers: PartialRequest['headers']): headers is NextRequest['headers'] {
