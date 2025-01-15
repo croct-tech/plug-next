@@ -15,8 +15,8 @@ export type RequestContext = {
     preferredLocale?: string,
 };
 
-export function resolveRequestContext(route?: RouteContext): RequestContext {
-    return getRequestContext(getHeaders(route), getCookies(route));
+export async function resolveRequestContext(route?: RouteContext): Promise<RequestContext> {
+    return getRequestContext(await getHeaders(route), await getCookies(route));
 }
 
 export function getRequestContext(headers: HeaderReader, cookies: CookieReader): RequestContext {
@@ -78,8 +78,8 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
     return context;
 }
 
-export function resolvePreferredLocale(route?: RouteContext): string|null {
-    return getPreferredLocale(getHeaders(route));
+export async function resolvePreferredLocale(route?: RouteContext): Promise<string|null> {
+    return getPreferredLocale(await getHeaders(route));
 }
 
 function getPreferredLocale(headers: HeaderReader): string|null {

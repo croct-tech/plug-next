@@ -5,7 +5,7 @@ import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
 import {getCookies, getHeaders, PartialRequest, PartialResponse, RouteContext} from '@/headers';
 
-type ReadonlyCookies = ReturnType<typeof cookies>;
+type ReadonlyCookies = Awaited<ReturnType<typeof cookies>>;
 
 function createCookieJar(cookies: Record<string, string> = {}): ReadonlyCookies {
     const jar: Record<string, string> = {...cookies};
@@ -167,7 +167,7 @@ describe('getRequestContext', () => {
 });
 
 describe('resolveRequestContext', () => {
-    it('should return the request context', () => {
+    it('should return the request context', async () => {
         const headers = new Headers();
         const cookies = createCookieJar();
 
@@ -194,10 +194,10 @@ describe('resolveRequestContext', () => {
         headers.set(Header.PREVIEW_TOKEN, request.previewToken);
         headers.set(Header.PREFERRED_LOCALE, request.preferredLocale);
 
-        jest.mocked(getHeaders).mockReturnValue(headers);
-        jest.mocked(getCookies).mockReturnValue(cookies);
+        jest.mocked(getHeaders).mockResolvedValue(headers);
+        jest.mocked(getCookies).mockResolvedValue(cookies);
 
-        expect(resolveRequestContext(route)).toEqual(request);
+        await expect(resolveRequestContext(route)).resolves.toEqual(request);
 
         expect(getHeaders).toHaveBeenCalledWith(route);
         expect(getCookies).toHaveBeenCalledWith(route);
@@ -210,7 +210,7 @@ describe('resolvePreferredLocale', () => {
         jest.clearAllMocks();
     });
 
-    it('should return the preferred locale from the headers', () => {
+    it('should return the preferred locale from the headers', async () => {
         const headers = new Headers();
 
         headers.set(Header.PREFERRED_LOCALE, 'en');
@@ -220,23 +220,23 @@ describe('resolvePreferredLocale', () => {
             res: {} as PartialResponse,
         };
 
-        jest.mocked(getHeaders).mockReturnValue(headers);
+        jest.mocked(getHeaders).mockResolvedValue(headers);
 
-        expect(resolvePreferredLocale(route)).toEqual('en');
+        await expect(resolvePreferredLocale(route)).resolves.toEqual('en');
         expect(getHeaders).toHaveBeenCalledWith(route);
     });
 
-    it('should return the preferred locale from the environment', () => {
+    it('should return the preferred locale from the environment', async () => {
         process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'en';
 
-        jest.mocked(getHeaders).mockReturnValue(new Headers());
+        jest.mocked(getHeaders).mockResolvedValue(new Headers());
 
-        expect(resolvePreferredLocale()).toEqual('en');
+        await expect(resolvePreferredLocale()).resolves.toEqual('en');
     });
 
-    it('should return null when the preferred locale is missing', () => {
-        jest.mocked(getHeaders).mockReturnValue(new Headers());
+    it('should return null when the preferred locale is missing', async () => {
+        jest.mocked(getHeaders).mockResolvedValue(new Headers());
 
-        expect(resolvePreferredLocale()).toBeNull();
+        await expect(resolvePreferredLocale()).resolves.toBeNull();
     });
 });

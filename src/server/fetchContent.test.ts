@@ -207,11 +207,11 @@ describe('fetchContent', () => {
                 throw new Error('next/headers requires app router');
             });
         } else {
-            jest.mocked(resolveRequestContext).mockReturnValue(scenario.request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(scenario.request);
         }
 
         if (scenario.preferredLocale !== undefined) {
-            jest.mocked(resolvePreferredLocale).mockReturnValue(scenario.preferredLocale);
+            jest.mocked(resolvePreferredLocale).mockResolvedValue(scenario.preferredLocale);
         }
 
         jest.mocked(loadContent).mockResolvedValue(content);
@@ -230,7 +230,7 @@ describe('fetchContent', () => {
             },
         };
 
-        jest.mocked(resolveRequestContext).mockReturnValue({
+        jest.mocked(resolveRequestContext).mockResolvedValue({
             clientId: request.clientId,
         });
 
@@ -254,7 +254,7 @@ describe('fetchContent', () => {
             res: {} as NextResponse,
         };
 
-        jest.mocked(resolveRequestContext).mockReturnValue(request);
+        jest.mocked(resolveRequestContext).mockResolvedValue(request);
         jest.mocked(loadContent).mockResolvedValue({
             content: {
                 _component: 'component',
@@ -274,7 +274,7 @@ describe('fetchContent', () => {
             res: {} as NextResponse,
         };
 
-        jest.mocked(resolveRequestContext).mockReturnValue(request);
+        jest.mocked(resolveRequestContext).mockResolvedValue(request);
         jest.mocked(loadContent).mockResolvedValue({
             content: {
                 _component: 'component',
@@ -345,7 +345,7 @@ describe('fetchContent', () => {
             },
         };
 
-        jest.mocked(resolveRequestContext).mockReturnValue({
+        jest.mocked(resolveRequestContext).mockResolvedValue({
             clientId: request.clientId,
         });
 
@@ -377,7 +377,7 @@ describe('fetchContent', () => {
             },
         });
 
-        jest.mocked(resolveRequestContext).mockReturnValue(request);
+        jest.mocked(resolveRequestContext).mockResolvedValue(request);
 
         await fetchContent<any, any>('slot-id', {
             static: staticContent,
@@ -415,7 +415,7 @@ describe('fetchContent', () => {
             },
         });
 
-        jest.mocked(resolveRequestContext).mockReturnValue(request);
+        jest.mocked(resolveRequestContext).mockResolvedValue(request);
 
         await fetchContent<any, any>('slot-id', {
             static: staticContent,
@@ -449,7 +449,7 @@ describe('fetchContent', () => {
             },
         };
 
-        jest.mocked(resolveRequestContext).mockReturnValue({
+        jest.mocked(resolveRequestContext).mockResolvedValue({
             clientId: request.clientId,
         });
 

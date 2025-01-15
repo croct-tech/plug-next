@@ -19,14 +19,14 @@ describe('getHeaders', () => {
         mockHeaders.mockReset();
     });
 
-    it('should use next/headers if available', () => {
+    it('should use next/headers if available', async () => {
         const get = jest.fn(() => 'test');
 
         mockHeaders.mockReturnValue({
             get: get,
         });
 
-        const header = getHeaders();
+        const header = await getHeaders();
 
         expect(header.get('test')).toBe('test');
 
@@ -105,14 +105,14 @@ describe('getHeaders', () => {
                 response: response,
             };
         })(),
-    ])('should use the $name if specified', scenario => {
+    ])('should use the $name if specified', async scenario => {
         const {request, response} = scenario;
 
         mockHeaders.mockImplementation(() => {
             throw new Error('next/headers requires app router');
         });
 
-        const headers = getHeaders({
+        const headers = await getHeaders({
             req: request,
             res: response,
         });
@@ -128,7 +128,7 @@ describe('getCookies', () => {
         mockCookies.mockReset();
     });
 
-    it('should use next/headers if available', () => {
+    it('should use next/headers if available', async () => {
         const get = jest.fn(() => ({value: 'foo'}));
         const set = jest.fn();
 
@@ -137,7 +137,7 @@ describe('getCookies', () => {
             set: set,
         });
 
-        const cookies = getCookies();
+        const cookies = await getCookies();
 
         expect(cookies.get('test')).toEqual({value: 'foo'});
 
@@ -303,14 +303,14 @@ describe('getCookies', () => {
                 response: response,
             };
         })(),
-    ])('should use the $name if specified', scenario => {
+    ])('should use the $name if specified', async scenario => {
         const {request, response} = scenario;
 
         mockCookies.mockImplementation(() => {
             throw new Error('next/headers requires app router');
         });
 
-        const cookies = getCookies({
+        const cookies = await getCookies({
             req: request,
             res: response,
         });
@@ -319,7 +319,7 @@ describe('getCookies', () => {
         expect(cookies.get('test')).toBeUndefined();
     });
 
-    it('should set a cookie to NextResponse', () => {
+    it('should set a cookie to NextResponse', async () => {
         mockCookies.mockImplementation(() => {
             throw new Error('next/headers requires app router');
         });
@@ -336,7 +336,7 @@ describe('getCookies', () => {
             } as Partial<NextResponse['cookies']> as NextResponse['cookies'],
         } satisfies PartialResponse;
 
-        const cookies = getCookies({
+        const cookies = await getCookies({
             req: request,
             res: response,
         });
@@ -350,7 +350,7 @@ describe('getCookies', () => {
         expect(response.cookies.set).toHaveBeenCalledWith('test', 'value', options);
     });
 
-    it('should set a cookie to NextApiResponse/ServerResponse', () => {
+    it('should set a cookie to NextApiResponse/ServerResponse', async () => {
         mockCookies.mockImplementation(() => {
             throw new Error('next/headers requires app router');
         });
@@ -365,7 +365,7 @@ describe('getCookies', () => {
             setHeader: jest.fn(),
         } satisfies PartialResponse;
 
-        const cookies = getCookies({
+        const cookies = await getCookies({
             req: request,
             res: response,
         });
@@ -379,7 +379,7 @@ describe('getCookies', () => {
         expect(response.setHeader).toHaveBeenCalledWith('Set-Cookie', ['test=value; Domain=example.com']);
     });
 
-    it('should preserve existing cookies when setting a new cookie', () => {
+    it('should preserve existing cookies when setting a new cookie', async () => {
         mockCookies.mockImplementation(() => {
             throw new Error('next/headers requires app router');
         });
@@ -404,7 +404,7 @@ describe('getCookies', () => {
             setHeader: jest.fn(),
         } satisfies PartialResponse;
 
-        const cookies = getCookies({
+        const cookies = await getCookies({
             req: request,
             res: response,
         });

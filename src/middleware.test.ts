@@ -4,9 +4,11 @@ import {Token} from '@croct/sdk/token';
 import {v4 as uuid} from 'uuid';
 import {ApiKey} from '@croct/sdk/apiKey';
 import * as process from 'node:process';
+import {ipAddress} from '@vercel/functions';
 import {Header, QueryParameter} from '@/config/http';
 import {config, withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
+import mocked = jest.mocked;
 
 jest.mock(
     'uuid',
@@ -22,6 +24,13 @@ jest.mock(
         NextResponse: {
             next: jest.fn(),
         },
+    }),
+);
+
+jest.mock(
+    '@vercel/functions',
+    () => ({
+        ipAddress: jest.fn(),
     }),
 );
 
@@ -405,7 +414,7 @@ describe('middleware', () => {
 
         const ip = '127.0.0.1';
 
-        jest.spyOn(request, 'ip', 'get').mockReturnValue(ip);
+        mocked(ipAddress).mockReturnValue(ip);
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
@@ -414,6 +423,8 @@ describe('middleware', () => {
         await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
 
         expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(ipAddress).toHaveBeenCalledWith(request);
 
         expect(request.headers.get(Header.CLIENT_IP)).toBe(ip);
     });

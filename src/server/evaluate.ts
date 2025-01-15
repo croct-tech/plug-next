@@ -14,13 +14,13 @@ export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOption
     route?: RouteContext,
 };
 
-export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
+export async function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
     const {route, logger, ...rest} = options;
 
     let context: RequestContext;
 
     try {
-        context = resolveRequestContext(route);
+        context = await resolveRequestContext(route);
     } catch (error) {
         if (isDynamicServerError(error) || route !== undefined) {
             return Promise.reject(error);
