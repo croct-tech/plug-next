@@ -32,9 +32,9 @@
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.json"
   },
   "peerDependencies": {
-    "next": "^13.0.0-0 || ^14.0.0-0 || ^15.0.0-0",
-    "react": "^16.8.0-0  || ^17.0.0-0 || ^18.0.0-0 || ^19.0.0-0",
-    "react-dom": "^16.8.0-0  || ^17.0.0-0 || ^18.0.0-0 || ^19.0.0-0"
+    "next": "^13.0 || ^14.0 || ^15.0",
+    "react": "^16.8  || ^17.0 || ^18.0 || ^19.0",
+    "react-dom": "^16.8  || ^17.0 || ^18.0 || ^19.0"
   },
   "dependencies": {
     "@croct/content": "^1.0.0",
@@ -43,7 +43,6 @@
     "@croct/sdk": "^0.17.4",
     "@vercel/functions": "^1.5.2",
     "cookie": "^0.7.0",
-    "uuid": "^11.0.0"
     "path-to-regexp": "^8.2.0"
   },
   "devDependencies": {

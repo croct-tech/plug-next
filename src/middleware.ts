@@ -2,6 +2,7 @@ import {type NextRequest, type NextMiddleware, type NextFetchEvent, NextResponse
 import cookie from 'cookie';
 import {Token} from '@croct/sdk/token';
 import {base64UrlDecode} from '@croct/sdk/base64Url';
+import {ipAddress} from '@vercel/functions';
 import {Header, QueryParameter} from '@/config/http';
 import {
     CookieOptions,
@@ -113,8 +114,10 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
             headers.set(Header.PREFERRED_LOCALE, locale);
         }
 
-        if (request.ip !== undefined) {
-            headers.set(Header.CLIENT_IP, request.ip);
+        const ip = ipAddress(request);
+
+        if (ip !== undefined) {
+            headers.set(Header.CLIENT_IP, ip);
         }
 
         const previewToken = getPreviewToken(request, previewCookie.name);
