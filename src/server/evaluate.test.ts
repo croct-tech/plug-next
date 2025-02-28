@@ -164,7 +164,7 @@ describe('evaluation', () => {
             const query = 'true';
             const result = true;
 
-            jest.mocked(resolveRequestContext).mockReturnValue(scenario.request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(scenario.request);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
             await expect(evaluate(query, scenario.options)).resolves.toBe(result);
@@ -178,12 +178,30 @@ describe('evaluation', () => {
                 res: {} as NextResponse,
             };
 
-            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
             jest.mocked(executeQuery).mockResolvedValue(true);
 
             await expect(evaluate('true', {route: route})).resolves.toBe(true);
 
             expect(resolveRequestContext).toHaveBeenCalledWith(route);
+        });
+
+        it('should rethrow dynamic server errors', async () => {
+            const error = new class DynamicServerError extends Error {
+                public readonly digest = 'DYNAMIC_SERVER_USAGE';
+
+                public constructor() {
+                    super('cause');
+
+                    Object.setPrototypeOf(this, new.target.prototype);
+                }
+            }();
+
+            jest.mocked(resolveRequestContext).mockImplementation(() => {
+                throw error;
+            });
+
+            await expect(evaluate('true')).rejects.toBe(error);
         });
 
         it('should report an error if the route context is missing', async () => {
@@ -192,7 +210,9 @@ describe('evaluation', () => {
             });
 
             await expect(evaluate('true')).rejects.toThrow(
-                'evaluate() requires specifying the `route` option outside app routes. '
+                'Error resolving request context: next/headers requires app router. '
+                + 'This error typically occurs when evaluate() is called outside of app routes '
+                + 'without specifying the `route` option. '
                 + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
             );
         });
@@ -220,7 +240,7 @@ describe('evaluation', () => {
             jest.spyOn(console, 'info').mockImplementation();
 
             jest.mocked(executeQuery).mockResolvedValue(true);
-            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
 
             await evaluate('true');
 
@@ -251,7 +271,7 @@ describe('evaluation', () => {
             jest.spyOn(console, 'info').mockImplementation();
 
             jest.mocked(executeQuery).mockResolvedValue(true);
-            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
 
             await evaluate('true');
 
@@ -275,7 +295,7 @@ describe('evaluation', () => {
         it('should use the base endpoint URL from the environment', async () => {
             process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL = 'https://example.com';
 
-            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
             jest.mocked(executeQuery).mockResolvedValue(true);
 
             await evaluate('true');
@@ -290,7 +310,7 @@ describe('evaluation', () => {
             const result = true;
             const defaultTimeout = 1000;
 
-            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
             jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
@@ -307,7 +327,7 @@ describe('evaluation', () => {
             const defaultTimeout = 1000;
             const timeout = 2000;
 
-            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
             jest.mocked(getDefaultFetchTimeout).mockReturnValue(defaultTimeout);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
@@ -352,7 +372,7 @@ describe('evaluation', () => {
         it('should evaluate a query with no arguments', async () => {
             const result = true;
 
-            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
             await expect(cql`true`).resolves.toBe(result);
@@ -378,7 +398,7 @@ describe('evaluation', () => {
         it('should evaluate a query with arguments', async () => {
             const result = true;
 
-            jest.mocked(resolveRequestContext).mockReturnValue(request);
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
             jest.mocked(executeQuery).mockResolvedValue(result);
 
             const variable = 'variable';

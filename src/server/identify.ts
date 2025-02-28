@@ -6,7 +6,7 @@ export async function identify(userId: string, route?: RouteContext): Promise<vo
     let cookies: CookieAccessor;
 
     try {
-        cookies = getCookies(route);
+        cookies = await getCookies(route);
     } catch {
         throw new Error(
             'identify() requires specifying the `route` parameter outside app routes. '

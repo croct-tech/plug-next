@@ -53,6 +53,18 @@ describe('useContent', () => {
         expect(useContentMock).toHaveBeenCalledWith('id', undefined);
     });
 
+    it('should ignore router errors', () => {
+        jest.mocked(useContentMock).mockReturnValue({});
+
+        jest.mocked(useRouter).mockImplementation(() => {
+            throw new Error();
+        });
+
+        useContent('id');
+
+        expect(useContentMock).toHaveBeenCalledWith('id', undefined);
+    });
+
     it('should not override the specified locale', () => {
         jest.mocked(useContentMock).mockReturnValue({});
 

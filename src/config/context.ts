@@ -18,8 +18,8 @@ export type RequestContext = {
 /**
  * @internal
  */
-export function resolveRequestContext(route?: RouteContext): RequestContext {
-    return getRequestContext(getHeaders(route), getCookies(route));
+export async function resolveRequestContext(route?: RouteContext): Promise<RequestContext> {
+    return getRequestContext(await getHeaders(route), await getCookies(route));
 }
 
 /**
@@ -30,9 +30,8 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
 
     if (clientId === null) {
         throw new Error(
-            'Croct\'s Client ID is missing. Did you configure Croct\'s middleware? '
-            + 'If you\'re using a `matcher`, ensure it includes all page routes. '
-            + 'For help, see: https://croct.help/sdk/nextjs/missing-middleware',
+            'Croct\'s Client ID is missing. Did you forget to configure Croct\'s middleware? '
+          + 'For help, see: https://croct.help/sdk/nextjs/missing-middleware',
         );
     }
 
@@ -88,8 +87,8 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
 /**
  * @internal
  */
-export function resolvePreferredLocale(route?: RouteContext): string|null {
-    return getPreferredLocale(getHeaders(route));
+export async function resolvePreferredLocale(route?: RouteContext): Promise<string|null> {
+    return getPreferredLocale(await getHeaders(route));
 }
 
 function getPreferredLocale(headers: HeaderReader): string|null {

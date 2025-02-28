@@ -1,5 +1,5 @@
 import {useContent as useContentReact, UseContentOptions, SlotContent, VersionedSlotId} from '@croct/plug-react';
-import {useRouter} from 'next/router';
+import {NextRouter, useRouter as usePageRouter} from 'next/router';
 
 export type {UseContentOptions} from '@croct/plug-react';
 
@@ -12,6 +12,14 @@ function useContentNext(id: VersionedSlotId, options?: UseContentOptions<any, an
             ? {...options, preferredLocale: locale}
             : options,
     );
+}
+
+export function useRouter(): Pick<NextRouter, 'locale'> {
+    try {
+        return usePageRouter();
+    } catch {
+        return {};
+    }
 }
 
 export const useContent: typeof useContentReact = useContentNext;

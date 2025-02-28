@@ -7,11 +7,13 @@ import {
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
+import {formatCause} from '@croct/sdk/error';
 import {getApiKey} from '@/config/security';
 import {RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {RouteContext} from '@/headers';
 import {getEnvEntry, getEnvFlag} from '@/config/env';
+import {isDynamicServerError} from '@/errors';
 
 export type DynamicContentOptions<T extends JsonObject = JsonObject> = Omit<DynamicOptions<T>, 'apiKey' | 'appId'>;
 
@@ -21,7 +23,7 @@ export type FetchOptions<T extends JsonObject = JsonObject> = (DynamicContentOpt
     route?: RouteContext,
 };
 
-export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
+export async function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     slotId: I,
     options: FetchOptions<SlotContent<I, C>> = {},
 ): Promise<FetchResponse<I, C>> {
@@ -44,7 +46,7 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
 
         if (preferredLocale === null) {
             try {
-                preferredLocale = resolvePreferredLocale(route);
+                preferredLocale = await resolvePreferredLocale(route);
             } catch {
                 // Static content can be fetched from anywhere
             }
@@ -60,18 +62,20 @@ export function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     let context: RequestContext;
 
     try {
-        context = resolveRequestContext(route);
+        context = await resolveRequestContext(route);
     } catch (error) {
-        if (route === undefined) {
-            return Promise.reject(
-                new Error(
-                    'fetchContent() requires specifying the `route` option outside app routes. '
-                    + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
-                ),
-            );
+        if (isDynamicServerError(error) || route !== undefined) {
+            return Promise.reject(error);
         }
 
-        return Promise.reject(error);
+        return Promise.reject(
+            new Error(
+                `Error resolving request context: ${formatCause(error)}. `
+                + 'This error typically occurs when fetchContent() is called outside of app routes '
+                + 'without specifying the `route` option. '
+                + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
+            ),
+        );
     }
 
     return loadContent<I, C>(slotId, {

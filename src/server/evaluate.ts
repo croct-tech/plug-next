@@ -2,34 +2,38 @@ import {evaluate as executeQuery, EvaluationOptions as BaseOptions} from '@croct
 import type {JsonValue} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
+import {formatCause} from '@croct/sdk/error';
 import {getApiKey} from '@/config/security';
 import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {isAppRouter, RouteContext} from '@/headers';
 import {getEnvEntry, getEnvFlag} from '@/config/env';
+import {isDynamicServerError} from '@/errors';
 
 export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey' | 'appId'> & {
     route?: RouteContext,
 };
 
-export function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
+export async function evaluate<T extends JsonValue>(query: string, options: EvaluationOptions<T> = {}): Promise<T> {
     const {route, logger, ...rest} = options;
 
     let context: RequestContext;
 
     try {
-        context = resolveRequestContext(route);
+        context = await resolveRequestContext(route);
     } catch (error) {
-        if (route === undefined) {
-            return Promise.reject(
-                new Error(
-                    'evaluate() requires specifying the `route` option outside app routes. '
-                    + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
-                ),
-            );
+        if (isDynamicServerError(error) || route !== undefined) {
+            return Promise.reject(error);
         }
 
-        return Promise.reject(error);
+        return Promise.reject(
+            new Error(
+                `Error resolving request context: ${formatCause(error)}. `
+                + 'This error typically occurs when evaluate() is called outside of app routes '
+                + 'without specifying the `route` option. '
+                + 'For help, see: https://croct.help/sdk/nextjs/missing-route-context',
+            ),
+        );
     }
 
     const timeout = getDefaultFetchTimeout();
