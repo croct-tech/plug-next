@@ -1,15 +1,18 @@
 import type {NextRequest} from 'next/server';
 import {pathToRegexp} from 'path-to-regexp';
 
-export type RouteCondition = {
+type ValueBasedCondition<V extends string|RegExp = string> = {
     type: 'header' | 'query' | 'cookie',
     key: string,
-    value?: string,
-} | {
-    type: 'host',
-    key?: undefined,
-    value: string,
+    value?: V,
 };
+
+type HostBasedCondition<V extends string|RegExp = string> = {
+    type: 'host',
+    value: V,
+};
+
+export type RouteCondition = ValueBasedCondition | HostBasedCondition;
 
 export type RouterCriteria = {
     source?: string,
@@ -18,6 +21,8 @@ export type RouterCriteria = {
     missing?: RouteCondition[],
 };
 
+type NormalizedRouteCondition = ValueBasedCondition<RegExp> | HostBasedCondition<RegExp>;
+
 export type RouterMatcher<R = NextRequest> = (request: R) => boolean;
 
 export function createMatcher(matcher: RouterCriteria[]): RouterMatcher {
@@ -25,7 +30,7 @@ export function createMatcher(matcher: RouterCriteria[]): RouterMatcher {
         return () => true;
     }
 
-    const predicates = matcher.map(parsePredicate);
+    const predicates = matcher.map(createPredicate);
 
     return request => {
         const info = getRequestInfo(request);
@@ -35,7 +40,7 @@ export function createMatcher(matcher: RouterCriteria[]): RouterMatcher {
 }
 
 /**
- * Parses the route criteria into a predicate function.
+ * Creates a predicate function that matches a request against a set of criteria.
  *
  * The predicate function returns `true` if the request matches the criteria and `false` otherwise.
  *
@@ -45,11 +50,7 @@ export function createMatcher(matcher: RouterCriteria[]): RouterMatcher {
  *
  * @returns The predicate function.
  */
-function parsePredicate(criteria: RouterCriteria | string): RouterMatcher<RequestInfo> {
-    if (typeof criteria === 'string') {
-        return parsePredicate({source: criteria});
-    }
-
+function createPredicate(criteria: RouterCriteria): RouterMatcher<RequestInfo> {
     let regex: RegExp | null;
 
     try {
@@ -58,8 +59,13 @@ function parsePredicate(criteria: RouterCriteria | string): RouterMatcher<Reques
         throw new Error(`Invalid source pattern: ${criteria.source}`);
     }
 
+    const hasConditions = (criteria.has ?? []).map(createCondition);
+    const missingConditions = (criteria.missing ?? []).map(createCondition);
+
     return (request: RequestInfo): boolean => {
         const {locale} = request;
+        // Should ignore the locale in path matching
+        // Docs: https://nextjs.org/docs/app/api-reference/file-conventions/middleware#matcher
         const pathname = criteria.locale === false
             ? `${locale === '' ? '' : `/${locale}`}${request.routePath}`
             : request.routePath;
@@ -68,9 +74,26 @@ function parsePredicate(criteria: RouterCriteria | string): RouterMatcher<Reques
             return false;
         }
 
-        return (criteria.has ?? []).every(condition => matchesCondition(request, condition))
-            && !(criteria.missing ?? []).some(condition => matchesCondition(request, condition));
+        return hasConditions.every(condition => matchesCondition(request, condition))
+            && !missingConditions.some(condition => matchesCondition(request, condition));
     };
+}
+
+function createCondition(condition: RouteCondition): NormalizedRouteCondition {
+    if (condition.type !== 'host' && condition.value === undefined) {
+        const {value: _value, ...rest} = condition;
+
+        return rest;
+    }
+
+    try {
+        return {
+            ...condition,
+            value: new RegExp(`^${condition.value}$`),
+        };
+    } catch {
+        throw new Error(`Invalid value pattern for ${condition.type} condition: ${condition.value}`);
+    }
 }
 
 function parseSource(source: string | undefined): RegExp | null {
@@ -87,26 +110,22 @@ function parseSource(source: string | undefined): RegExp | null {
     return regexp;
 }
 
-function matchesCondition(request: RequestInfo, condition: RouteCondition): boolean {
+function matchesCondition(request: RequestInfo, condition: NormalizedRouteCondition): boolean {
     const value = getConditionValue(request, condition) ?? '';
-    const expectedValue = condition.value ?? '';
-
-    if (expectedValue === '' && value !== '') {
-        return true;
-    }
+    const expectedValue = condition.value ?? null;
 
     if (value === '') {
         return false;
     }
 
-    try {
-        return new RegExp(`^${expectedValue}$`).test(value);
-    } catch {
-        throw new Error(`Invalid value pattern for ${condition.type} condition: ${expectedValue}`);
+    if (expectedValue === null) {
+        return true;
     }
+
+    return expectedValue.test(value);
 }
 
-function getConditionValue(request: RequestInfo, condition: RouteCondition): string | null {
+function getConditionValue(request: RequestInfo, condition: NormalizedRouteCondition): string | null {
     switch (condition.type) {
         case 'header':
             return request.headers.get(condition.key);
