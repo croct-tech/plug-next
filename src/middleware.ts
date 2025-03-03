@@ -13,7 +13,8 @@ import {
 import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from './config/security';
 import {createMatcher, RouterCriteria} from '@/matcher';
 
-const matcherRegex = /^(?!\/(api|_next\/static|_next\/image|favicon.ico)).*/;
+const matcherRegex = /\/((?!api|_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
+const isPageRoute = createMatcher([{source: matcherRegex.source}]);
 
 export const matcher = {
     /*
@@ -22,12 +23,11 @@ export const matcher = {
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      */
     source: matcherRegex.source,
 } satisfies RouterCriteria;
 
-// Ignore static assets
 export const config = {
     matcher: [matcher],
 };
@@ -71,39 +71,32 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
 
     const {next, matcher: matchers = [], localeResolver, userIdResolver} = args[0];
 
-    const matchesMiddleware = createMatcher((Array.isArray(matchers) ? matchers : [matchers]).flatMap(definition => {
-        if (definition === matchers) {
-            // Exclude the default matcher from the list of matchers
-            return [];
-        }
-
-        return typeof definition === 'string'
-            ? [{source: definition}]
-            : [definition];
-    }));
+    const matchesMiddleware = createMatcher((Array.isArray(matchers) ? matchers : [matchers])
+        .flatMap(
+            definition => (
+                typeof definition === 'string'
+                    ? [{source: definition}]
+                    : [definition]
+            ),
+        ));
 
     return async (request, event) => {
         const handler = matchesMiddleware(request) ? next : undefined;
 
-        if (!matcherRegex.test(request.nextUrl.pathname)) {
-            if (handler !== undefined) {
-                return handler(request, event);
-            }
-
-            return;
+        if (!isPageRoute(request)) {
+            return handler?.(request, event);
         }
 
         const clientIdCookie = getClientIdCookieOptions();
         const previewCookie = getPreviewCookieOptions();
         const userCookie = getUserTokenCookieOptions();
 
-        const headers = new Headers();
-
         const [userToken, locale] = await Promise.all([
             getUserToken(request, userCookie.name, userIdResolver),
             resolveLocale(request, localeResolver),
         ]);
 
+        const headers = new Headers();
         const clientId = getClientId(request, clientIdCookie.name);
 
         headers.set(Header.USER_TOKEN, userToken.toString());

@@ -58,8 +58,8 @@ describe('createMatcher', () => {
     };
 
     it('should fail if the source is an invalid pattern', () => {
-        expect(() => createMatcher([{source: '[/invalid'}]))
-            .toThrow('Invalid source pattern: [/invalid');
+        expect(() => createMatcher([{source: '(invalid'}]))
+            .toThrow('Invalid source pattern: (invalid');
     });
 
     it('should fail if the condition value is an invalid pattern', () => {

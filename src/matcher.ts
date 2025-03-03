@@ -55,7 +55,7 @@ function createPredicate(criteria: RouterCriteria): RouterMatcher<RequestInfo> {
 
     try {
         regex = parseSource(criteria.source);
-    } catch {
+    } catch (error) {
         throw new Error(`Invalid source pattern: ${criteria.source}`);
     }
 
@@ -101,13 +101,12 @@ function parseSource(source: string | undefined): RegExp | null {
         return null;
     }
 
-    const {regexp} = pathToRegexp(source, {
+    return pathToRegexp(source, {
         delimiter: '/',
+        strict: true,
         sensitive: false,
         trailing: false,
     });
-
-    return regexp;
 }
 
 function matchesCondition(request: RequestInfo, condition: NormalizedRouteCondition): boolean {
