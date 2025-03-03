@@ -42,7 +42,7 @@
     "@croct/sdk": "^0.17.4",
     "@vercel/functions": "^1.5.2",
     "cookie": "^0.7.0",
-    "path-to-regexp": "^7.0.0"
+    "path-to-regexp": "^6.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.2",

@@ -101,11 +101,10 @@ function parseSource(source: string | undefined): RegExp | null {
         return null;
     }
 
-    return pathToRegexp(source, {
+    return pathToRegexp(source, undefined, {
         delimiter: '/',
         strict: true,
         sensitive: false,
-        trailing: false,
     });
 }
 
