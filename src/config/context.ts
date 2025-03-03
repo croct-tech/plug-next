@@ -15,16 +15,22 @@ export type RequestContext = {
     preferredLocale?: string,
 };
 
+/**
+ * @internal
+ */
 export async function resolveRequestContext(route?: RouteContext): Promise<RequestContext> {
     return getRequestContext(await getHeaders(route), await getCookies(route));
 }
 
+/**
+ * @internal
+ */
 export function getRequestContext(headers: HeaderReader, cookies: CookieReader): RequestContext {
     const clientId = headers.get(Header.CLIENT_ID);
 
     if (clientId === null) {
         throw new Error(
-            'Croct\'s Client ID is missing. Did you forget to configure Croct\'s middleware? '
+            'Croct\'s Client ID is missing. Did you configure Croct\'s middleware? '
           + 'For help, see: https://croct.help/sdk/nextjs/missing-middleware',
         );
     }
@@ -78,6 +84,9 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
     return context;
 }
 
+/**
+ * @internal
+ */
 export async function resolvePreferredLocale(route?: RouteContext): Promise<string|null> {
     return getPreferredLocale(await getHeaders(route));
 }
