@@ -40,7 +40,7 @@
     "@croct/plug": "^0.16.2",
     "@croct/plug-react": "^0.10.0",
     "@croct/sdk": "^0.17.4",
-    "@vercel/functions": "^1.5.2",
+    "@vercel/functions": "^2.0.0",
     "cookie": "^0.7.0",
     "uuid": "^11.0.0"
   },
