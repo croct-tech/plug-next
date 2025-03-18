@@ -6,12 +6,12 @@ export type {UseContentOptions} from '@croct/plug-react';
 
 function useContentNext(id: VersionedSlotId, options?: UseContentOptions<any, any>): SlotContent {
     const router = useRouter();
-    const locale = getLocale(router.locale);
+    const preferredLocale = getLocale(options?.preferredLocale ?? router.locale);
 
     return useContentReact<any, any, any>(
         id,
-        options?.preferredLocale === undefined && locale !== null
-            ? {...options, preferredLocale: locale}
+        preferredLocale !== null
+            ? {...options, preferredLocale: preferredLocale}
             : options,
     );
 }
