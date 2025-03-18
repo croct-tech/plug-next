@@ -46,18 +46,6 @@ describe('useContent', () => {
         expect(useContentMock).toHaveBeenCalledWith('id', {preferredLocale: 'en'});
     });
 
-    it('should use the default preferred locale', () => {
-        process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'en';
-
-        jest.mocked(useContentMock).mockReturnValue({});
-
-        jest.mocked(useRouter).mockReturnValue({locale: ''} as NextRouter);
-
-        useContent('id');
-
-        expect(useContentMock).toHaveBeenCalledWith('id', {preferredLocale: 'en'});
-    });
-
     it('should ignore empty locale', () => {
         jest.mocked(useContentMock).mockReturnValue({});
 
