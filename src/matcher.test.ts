@@ -69,12 +69,12 @@ describe('createMatcher', () => {
 
     it.each<MatcherScenario>([
         {
-            name: 'should always match when no criteria is provided',
+            name: 'always match when no criteria is provided',
             expected: true,
             criteria: [],
         },
         {
-            name: 'should automatically add the locale to the criteria',
+            name: 'automatically add the locale to the criteria',
             expected: true,
             request: {
                 locale: 'en',
@@ -87,7 +87,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not automatically add the locale to the criteria when locale is false',
+            name: 'not automatically add the locale to the criteria when locale is false',
             expected: true,
             request: {
                 locale: 'en',
@@ -101,7 +101,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match routes matching the given pattern',
+            name: 'match routes matching the given pattern',
             expected: true,
             request: {
                 path: '/sub/123',
@@ -113,7 +113,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match routes not matching the given pattern',
+            name: 'not match routes not matching the given pattern',
             expected: false,
             request: {
                 path: '/123',
@@ -125,7 +125,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match a sub-path',
+            name: 'not match a sub-path',
             expected: false,
             request: {
                 path: 'prefix/sub/123',
@@ -137,7 +137,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match if the header is present',
+            name: 'match if the header is present',
             expected: true,
             request: {
                 headers: {
@@ -156,7 +156,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match if the header is missing',
+            name: 'not match if the header is missing',
             expected: false,
             criteria: [
                 {
@@ -170,7 +170,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match if the header is missing',
+            name: 'match if the header is missing',
             expected: true,
             criteria: [
                 {
@@ -184,7 +184,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match if the header is present',
+            name: 'not match if the header is present',
             expected: false,
             request: {
                 headers: {
@@ -203,7 +203,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match if the query parameter is present',
+            name: 'match if the query parameter is present',
             expected: true,
             request: {
                 query: {
@@ -222,7 +222,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match if the query parameter is missing',
+            name: 'not match if the query parameter is missing',
             expected: false,
             criteria: [
                 {
@@ -236,7 +236,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match if the query parameter is missing',
+            name: 'match if the query parameter is missing',
             expected: true,
             criteria: [
                 {
@@ -250,7 +250,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match if the query parameter is present',
+            name: 'not match if the query parameter is present',
             expected: false,
             request: {
                 query: {
@@ -269,7 +269,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match if the cookie is present',
+            name: 'match if the cookie is present',
             expected: true,
             request: {
                 cookies: {
@@ -288,7 +288,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match if the cookie is missing',
+            name: 'not match if the cookie is missing',
             expected: false,
             criteria: [
                 {
@@ -302,7 +302,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match if the cookie is missing',
+            name: 'match if the cookie is missing',
             expected: true,
             criteria: [
                 {
@@ -316,7 +316,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match if the cookie is present',
+            name: 'not match if the cookie is present',
             expected: false,
             request: {
                 cookies: {
@@ -335,7 +335,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match if the host matches',
+            name: 'match if the host matches',
             expected: true,
             criteria: [
                 {
@@ -349,7 +349,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match if the host does not match',
+            name: 'not match if the host does not match',
             expected: false,
             criteria: [
                 {
@@ -363,7 +363,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match if all conditions are met',
+            name: 'match if all conditions are met',
             expected: true,
             request: {
                 headers: {
@@ -400,7 +400,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should not match if any condition is not met',
+            name: 'not match if any condition is not met',
             expected: false,
             request: {
                 headers: {
@@ -437,7 +437,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should consider empty values as missing',
+            name: 'consider empty values as missing',
             expected: true,
             request: {
                 headers: {
@@ -470,7 +470,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should always match values with no condition value specified',
+            name: 'always match values with no condition value specified',
             expected: true,
             request: {
                 headers: {
@@ -503,7 +503,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match regex in the value',
+            name: 'match regex in the value',
             expected: true,
             request: {
                 headers: {
@@ -522,12 +522,12 @@ describe('createMatcher', () => {
                         {
                             type: 'header',
                             key: 'x-custom-header',
-                            value: 'value?',
+                            value: 'value',
                         },
                         {
                             type: 'query',
                             key: 'custom-query',
-                            value: 'value?',
+                            value: 'value',
                         },
                         {
                             type: 'cookie',
