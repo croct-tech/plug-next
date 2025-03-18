@@ -1,9 +1,8 @@
-import {NextMiddleware, NextRequest, NextResponse} from 'next/server';
-import {ipAddress} from '@vercel/functions';
+import {type NextRequest, type NextMiddleware, type NextFetchEvent, NextResponse} from 'next/server';
 import cookie from 'cookie';
-import {v4 as uuidv4} from 'uuid';
 import {Token} from '@croct/sdk/token';
 import {base64UrlDecode} from '@croct/sdk/base64Url';
+import {ipAddress} from '@vercel/functions';
 import {Header, QueryParameter} from '@/config/http';
 import {
     CookieOptions,
@@ -12,19 +11,25 @@ import {
     getUserTokenCookieOptions,
 } from '@/config/cookie';
 import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from './config/security';
+import {createMatcher, RouterCriteria} from '@/matcher';
 
-// Ignore static assets
+const matcherRegex = /\/((?!api|_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
+const isPageRoute = createMatcher([{source: matcherRegex.source}]);
+
+export const matcher = {
+    /*
+     * Match all request paths except for the ones starting with:
+     *
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     */
+    source: matcherRegex.source,
+} satisfies RouterCriteria;
+
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes)
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         */
-        '^(?!/(api|_next/static|_next/image|favicon.ico)).*',
-    ],
+    matcher: [matcher],
 };
 
 const CLIENT_ID_PATTERN = /^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{32})$/;
@@ -32,21 +37,27 @@ const CLIENT_ID_PATTERN = /^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[
 export const middleware = withCroct();
 
 export type UserIdResolver = (request: NextRequest) => Promise<string|null>|string|null;
+export type LocaleResolver = (request: NextRequest) => Promise<string|null>|string|null;
+
+type MiddlewareMatcher = string | string[] | RouterCriteria[];
 
 export type CroctMiddlewareOptions = {
     next?: NextMiddleware,
+    matcher?: MiddlewareMatcher,
     userIdResolver?: UserIdResolver,
+    localeResolver?: LocaleResolver,
 };
 
 type CroctMiddlewareParams =
       [NextMiddleware]
-    | [NextMiddleware, UserIdResolver]
+    | [NextMiddleware, MiddlewareMatcher]
     | [CroctMiddlewareOptions]
     | [];
 
 export function withCroct(): NextMiddleware;
 export function withCroct(next: NextMiddleware): NextMiddleware;
-export function withCroct(next: NextMiddleware, userIdResolver: UserIdResolver): NextMiddleware;
+// eslint-disable-next-line @typescript-eslint/no-shadow -- False positive
+export function withCroct(next: NextMiddleware, matcher: MiddlewareMatcher): NextMiddleware;
 export function withCroct(props: CroctMiddlewareOptions): NextMiddleware;
 
 export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
@@ -55,18 +66,37 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
     }
 
     if (typeof args[0] === 'function') {
-        return withCroct({next: args[0], userIdResolver: args[1]});
+        return withCroct({next: args[0], matcher: args[1]});
     }
 
-    const {next, userIdResolver} = args[0];
+    const {next, matcher: matchers = [], localeResolver, userIdResolver} = args[0];
+
+    const matchesMiddleware = createMatcher((Array.isArray(matchers) ? matchers : [matchers])
+        .flatMap(
+            definition => (
+                typeof definition === 'string'
+                    ? [{source: definition}]
+                    : [definition]
+            ),
+        ));
 
     return async (request, event) => {
+        const handler = matchesMiddleware(request) ? next : undefined;
+
+        if (!isPageRoute(request)) {
+            return handler?.(request, event);
+        }
+
         const clientIdCookie = getClientIdCookieOptions();
         const previewCookie = getPreviewCookieOptions();
         const userCookie = getUserTokenCookieOptions();
-        const {headers, nextUrl: {locale}} = request;
 
-        const userToken = await getUserToken(request, userCookie.name, userIdResolver);
+        const [userToken, locale] = await Promise.all([
+            getUserToken(request, userCookie.name, userIdResolver),
+            resolveLocale(request, localeResolver),
+        ]);
+
+        const headers = new Headers();
         const clientId = getClientId(request, clientIdCookie.name);
 
         headers.set(Header.USER_TOKEN, userToken.toString());
@@ -89,11 +119,7 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
             headers.set(Header.PREVIEW_TOKEN, previewToken);
         }
 
-        const response = (await next?.(request, event)) ?? NextResponse.next({
-            request: {
-                headers: new Headers(headers),
-            },
-        });
+        const response = await handleRequest(handler, headers, request, event);
 
         if (previewToken === 'exit') {
             unsetCookie(response, previewCookie.name);
@@ -116,15 +142,11 @@ function getCurrentUrl(request: NextRequest): string {
     return url.toString();
 }
 
-function generateClientId(): string {
-    return uuidv4();
-}
-
 function getClientId(request: NextRequest, cookieName: string): string {
     const clientId = request.cookies.get(cookieName)?.value ?? null;
 
     if (clientId === null || !CLIENT_ID_PATTERN.test(clientId)) {
-        return generateClientId();
+        return crypto.randomUUID();
     }
 
     return clientId;
@@ -205,4 +227,61 @@ function setCookie(response: Response, value: string, options: CookieOptions): v
     const {name, ...rest} = options;
 
     response.headers.append('Set-Cookie', cookie.serialize(name, value, rest));
+}
+
+async function resolveLocale(request: NextRequest, resolver?: LocaleResolver): Promise<string> {
+    const locale = resolver !== undefined ? ((await resolver(request)) ?? '') : '';
+
+    if (locale !== '') {
+        return locale;
+    }
+
+    return request.nextUrl.locale;
+}
+
+async function handleRequest(
+    next: NextMiddleware | undefined,
+    headers: Headers,
+    request: NextRequest,
+    event: NextFetchEvent,
+): Promise<Response> {
+    headers.forEach((value, name) => {
+        request.headers.set(name, value);
+    });
+
+    if (next === undefined) {
+        return NextResponse.next({
+            request: {
+                headers: new Headers(request.headers),
+            },
+        });
+    }
+
+    const nextResponse = NextResponse.next;
+
+    NextResponse.next = (init): NextResponse => {
+        const mergedHeaders = new Headers(init?.request?.headers);
+
+        headers.forEach((value, name) => {
+            mergedHeaders.set(name, value);
+        });
+
+        return nextResponse({
+            ...init,
+            request: {
+                ...init?.request,
+                headers: mergedHeaders,
+            },
+        });
+    };
+
+    try {
+        return await next(request, event) ?? NextResponse.next({
+            request: {
+                headers: new Headers(request.headers),
+            },
+        });
+    } finally {
+        NextResponse.next = nextResponse;
+    }
 }

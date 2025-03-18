@@ -1,8 +1,10 @@
 import {ApiKey} from '@croct/sdk/apiKey';
 import {Token} from '@croct/sdk/token';
-import {v4 as uuid} from 'uuid';
 import {getAppId} from '@/config/appId';
 
+/**
+ * @internal
+ */
 export function getApiKey(): ApiKey {
     const apiKey = process.env.CROCT_API_KEY;
 
@@ -21,6 +23,9 @@ export function getApiKey(): ApiKey {
     }
 }
 
+/**
+ * @internal
+ */
 export function getAuthenticationKey(): ApiKey {
     const apiKey = getApiKey();
 
@@ -35,11 +40,17 @@ export function getAuthenticationKey(): ApiKey {
     return apiKey;
 }
 
+/**
+ * @internal
+ */
 export function isUserTokenAuthenticationEnabled(): boolean {
     return process.env.CROCT_API_KEY !== undefined
         && process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION !== 'true';
 }
 
+/**
+ * @internal
+ */
 export function getTokenDuration(): number {
     const duration = process.env.CROCT_TOKEN_DURATION;
 
@@ -59,12 +70,15 @@ export function getTokenDuration(): number {
     return parsedDuration;
 }
 
+/**
+ * @internal
+ */
 export function issueToken(userId: string|null = null): Promise<Token> {
     const token = Token.issue(getAppId(), userId)
         .withDuration(getTokenDuration());
 
     if (isUserTokenAuthenticationEnabled()) {
-        return token.withTokenId(uuid())
+        return token.withTokenId(crypto.randomUUID())
             .signedWith(getAuthenticationKey());
     }
 

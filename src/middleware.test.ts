@@ -1,19 +1,19 @@
 import {NextRequest, NextResponse, NextFetchEvent, NextMiddleware} from 'next/server';
 import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
-import {v4 as uuid} from 'uuid';
 import {ApiKey} from '@croct/sdk/apiKey';
-import * as process from 'node:process';
 import {ipAddress} from '@vercel/functions';
+import {pathToRegexp} from 'path-to-regexp';
 import {Header, QueryParameter} from '@/config/http';
-import {config, withCroct} from '@/middleware';
+import {config, matcher, withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
-import mocked = jest.mocked;
+import {RouterCriteria} from '@/matcher';
 
 jest.mock(
-    'uuid',
+    'crypto',
     () => ({
-        v4: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
+        ...jest.requireActual('crypto'),
+        randomUUID: jest.fn(() => '00000000-0000-0000-0000-000000000000'),
     }),
 );
 
@@ -34,15 +34,40 @@ jest.mock(
     }),
 );
 
+describe('matcher', () => {
+    it.each<string>([
+        '/foo',
+        '/foo/bar',
+        '/foo/bar/baz',
+        '/foo/bar/baz/qux',
+    ])('should intercept requests to "%s"', path => {
+        expect(config.matcher).toHaveLength(1);
+        expect(path).toMatch(pathToRegexp(matcher.source));
+    });
+
+    it.each<string>([
+        '/api',
+        '/_next/static',
+        '/_next/image',
+        '/favicon.ico',
+        '/sitemap.xml',
+        '/robots.txt',
+    ])('should not intercept requests to "%s"', path => {
+        expect(config.matcher).toHaveLength(1);
+        expect(path).not.toMatch(pathToRegexp(matcher.source));
+    });
+});
+
 describe('middleware', () => {
     const ENV_VARS = {...process.env};
 
-    function createRequestMock(): NextRequest {
+    function createRequestMock(url = new URL('https://example.com/')): NextRequest {
         const cookies: Record<string, string> = {};
 
         return {
+            url: url.toString(),
             get nextUrl() {
-                return new URL('https://example.com/');
+                return url;
             },
             get ip() {
                 return undefined;
@@ -134,6 +159,8 @@ describe('middleware', () => {
     }
 
     beforeEach(() => {
+        jest.clearAllMocks();
+
         delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DOMAIN;
         delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_NAME;
         delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DURATION;
@@ -414,7 +441,7 @@ describe('middleware', () => {
 
         const ip = '127.0.0.1';
 
-        mocked(ipAddress).mockReturnValue(ip);
+        jest.mocked(ipAddress).mockReturnValue(ip);
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
@@ -1019,7 +1046,7 @@ describe('middleware', () => {
             : null;
 
         const oldUserToken = oldUnsignedToken !== null && requestToken?.signed === true
-            ? await oldUnsignedToken.withTokenId(uuid())
+            ? await oldUnsignedToken.withTokenId(crypto.randomUUID())
                 .signedWith(oldApiKey)
             : oldUnsignedToken;
 
@@ -1060,23 +1087,124 @@ describe('middleware', () => {
         }]);
     });
 
-    it.each<string>([
-        '/foo',
-        '/foo/bar',
-        '/foo/bar/baz',
-        '/foo/bar/baz/qux',
-    ])('should intercept requests to "%s"', url => {
-        expect(config.matcher).toHaveLength(1);
-        expect(new RegExp(config.matcher[0]).test(url)).toBe(true);
+    it('should use the locale resolver to determine the preferred locale', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const locale = 'en';
+
+        const localeResolver = jest.fn().mockResolvedValue(locale);
+
+        await expect(withCroct({localeResolver: localeResolver})(request, fetchEvent)).resolves.toBe(response);
+
+        expect(localeResolver).toHaveBeenCalledWith(request);
+
+        expect(request.headers.get(Header.PREFERRED_LOCALE)).toBe(locale);
     });
 
-    it.each<string>([
-        '/api',
-        '/_next/static',
-        '/_next/image',
-        '/favicon.ico',
-    ])('should not intercept requests to "%s"', url => {
-        expect(config.matcher).toHaveLength(1);
-        expect(new RegExp(config.matcher[0]).test(url)).toBe(false);
+    it('should call the next middleware if the matcher matches regardless of the request URL', async () => {
+        const request = createRequestMock(new URL('https://example.com/api/foo'));
+        const response = createResponseMock();
+
+        expect(request.nextUrl.pathname).not.toMatch(new RegExp(`^${matcher.source}$`));
+
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
+
+        const middlewareMatcher: RouterCriteria[] = [{
+            source: '/api/foo',
+        }];
+
+        const result = withCroct({matcher: middlewareMatcher, next: nextMiddleware})(request, fetchEvent);
+
+        await expect(result).resolves.toBe(response);
+
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+    });
+
+    it('should never call the next middleware if the matcher does not match', async () => {
+        const request = createRequestMock(new URL('https://example.com/foo'));
+        const response = createResponseMock();
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const nextMiddleware = jest.fn();
+
+        const middlewareMatcher: RouterCriteria[] = [{
+            source: '/api/foo',
+        }];
+
+        const result = withCroct({matcher: middlewareMatcher, next: nextMiddleware})(request, fetchEvent);
+
+        await expect(result).resolves.toBe(response);
+
+        expect(nextMiddleware).not.toHaveBeenCalled();
+    });
+
+    it('should always override the headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const nextResponse = NextResponse.next;
+
+        const spy = jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const nextMiddleware = jest.fn(
+            () => NextResponse.next({
+                request: {
+                    headers: new Headers(),
+                },
+            }),
+        );
+
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(NextResponse.next).toHaveBeenCalledTimes(1);
+
+        const headers = spy.mock.calls[0][0]?.request?.headers;
+
+        expect(headers?.get(Header.CLIENT_ID)).not.toBeNull();
+
+        expect(nextResponse).toBe(NextResponse.next);
+    });
+
+    it('should set the headers if the middleware does not return a response', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const nextMiddleware = jest.fn();
+
+        const spy = jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(spy).toHaveBeenCalledTimes(1);
+
+        const headers = spy.mock.calls[0][0]?.request?.headers;
+
+        expect(headers?.get(Header.CLIENT_ID)).not.toBeNull();
+    });
+
+    it('should restore the original next function even if the next middleware throws an error', async () => {
+        const request = createRequestMock();
+
+        const nextResponse = NextResponse.next;
+
+        const error = new Error('Test');
+
+        const nextMiddleware = jest.fn(
+            () => {
+                throw error;
+            },
+        );
+
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).rejects.toBe(error);
+
+        expect(nextResponse).toBe(NextResponse.next);
     });
 });
