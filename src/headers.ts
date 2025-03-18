@@ -204,6 +204,7 @@ export async function isAppRouter(): Promise<boolean> {
     return true;
 }
 
-function importNextHeaders(): Promise<typeof import('next/headers')> {
-    return import('next/headers');
+function importNextHeaders(): Promise<typeof import('next/headers.js')> {
+    // eslint-disable-next-line import/extensions -- Extension needed to work on both CJS and ESM
+    return import('next/headers.js');
 }
