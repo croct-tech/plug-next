@@ -3,9 +3,9 @@ import {resolvePreferredLocale} from '@/config/context';
 import {RouteContext} from '@/headers';
 import {isDynamicServerError} from '@/errors';
 
-export async function getPreferredLocale(route?: RouteContext): Promise<string|null> {
+export async function getPreferredLocale(route?: RouteContext): Promise<string> {
     try {
-        return await resolvePreferredLocale(route);
+        return await resolvePreferredLocale(route) ?? '';
     } catch (error) {
         if (isDynamicServerError(error) || route !== undefined) {
             return Promise.reject(error);

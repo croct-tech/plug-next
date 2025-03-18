@@ -70,4 +70,15 @@ describe('getPreferredLocale', () => {
 
         await expect(getPreferredLocale(route)).rejects.toBe(error);
     });
+
+    it('should return an empty string if the preferred locale is not defined', async () => {
+        jest.mocked(resolvePreferredLocale).mockResolvedValue(null);
+
+        const route: RouteContext = {
+            req: {} as NextRequest,
+            res: {} as NextResponse,
+        };
+
+        await expect(getPreferredLocale(route)).resolves.toBe('');
+    });
 });
