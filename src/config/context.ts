@@ -4,6 +4,9 @@ import {getUserTokenCookieOptions} from '@/config/cookie';
 import {CookieReader, getCookies, getHeaders, HeaderReader, RouteContext} from '@/headers';
 import {getEnvValue} from '@/config/env';
 
+/**
+ * @internal
+ */
 export type RequestContext = {
     clientId: string,
     uri?: string,

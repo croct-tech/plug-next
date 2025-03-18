@@ -4,24 +4,42 @@ import type {GetServerSidePropsContext, NextApiRequest, NextApiResponse} from 'n
 import type {cookies, headers} from 'next/headers';
 import cookie from 'cookie';
 
+/**
+ * @internal
+ */
 export type HeaderReader = Pick<Awaited<ReturnType<typeof headers>>, 'get'>;
 
+/**
+ * @internal
+ */
 export type CookieReader = {
     get: (name: string) => {value: string}|undefined,
 };
 
+/**
+ * @internal
+ */
 export type CookieOptions = NonNullable<Parameters<Awaited<ReturnType<typeof cookies>>['set']>[2]>;
 
+/**
+ * @internal
+ */
 export type CookieAccessor = CookieReader & {
     set: (name: string, value: string, options?: CookieOptions) => void,
 };
 
 type PageRequest = Pick<GetServerSidePropsContext['req'], 'headers' | 'cookies'>;
 
+/**
+ * @internal
+ */
 export type PartialRequest = Pick<NextRequest, 'headers' | 'cookies'>
     | Pick<NextApiRequest, 'headers' | 'cookies'>
     | PageRequest;
 
+/**
+ * @internal
+ */
 export type PartialResponse = Pick<NextResponse, 'headers' | 'cookies'>
     | Pick<NextApiResponse, 'getHeader' | 'setHeader'>
     | Pick<ServerResponse, 'getHeader' | 'setHeader'>;

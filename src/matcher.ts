@@ -12,6 +12,9 @@ type HostBasedCondition<V extends string|RegExp = string> = {
     value: V,
 };
 
+/**
+ * @internal
+ */
 export type RouteCondition = ValueBasedCondition | HostBasedCondition;
 
 export type RouterCriteria = {
@@ -23,8 +26,14 @@ export type RouterCriteria = {
 
 type NormalizedRouteCondition = ValueBasedCondition<RegExp> | HostBasedCondition<RegExp>;
 
+/**
+ * @internal
+ */
 export type RouterMatcher<R = NextRequest> = (request: R) => boolean;
 
+/**
+ * @internal
+ */
 export function createMatcher(matcher: RouterCriteria[]): RouterMatcher {
     if (matcher.length === 0) {
         return () => true;
