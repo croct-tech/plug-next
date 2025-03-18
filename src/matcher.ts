@@ -64,7 +64,8 @@ function createPredicate(criteria: RouterCriteria): RouterMatcher<RequestInfo> {
 
     return (request: RequestInfo): boolean => {
         const {locale} = request;
-        // Should ignore the locale in path matching
+        // Specifying `locale: false` in the criteria means that the locale should be ignored
+        // in the route matching.
         // Docs: https://nextjs.org/docs/app/api-reference/file-conventions/middleware#matcher
         const pathname = criteria.locale === false
             ? `${locale === '' ? '' : `/${locale}`}${request.routePath}`

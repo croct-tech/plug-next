@@ -125,7 +125,7 @@ describe('createMatcher', () => {
             ],
         },
         {
-            name: 'should match the full path',
+            name: 'should not match a sub-path',
             expected: false,
             request: {
                 path: 'prefix/sub/123',
