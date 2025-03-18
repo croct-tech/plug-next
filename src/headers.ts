@@ -52,9 +52,9 @@ export type RouteContext = {
 /**
  * @internal
  */
-export function getHeaders(route?: RouteContext): Promise<HeaderReader> {
+export async function getHeaders(route?: RouteContext): Promise<HeaderReader> {
     try {
-        const {headers} = importNextHeaders();
+        const {headers} = await importNextHeaders();
 
         return headers();
     } catch (error) {
@@ -89,9 +89,9 @@ export function getHeaders(route?: RouteContext): Promise<HeaderReader> {
 /**
  * @internal
  */
-export function getCookies(route?: RouteContext): Promise<CookieAccessor> {
+export async function getCookies(route?: RouteContext): Promise<CookieAccessor> {
     try {
-        const {cookies} = importNextHeaders();
+        const {cookies} = await importNextHeaders();
 
         return cookies();
     } catch (error) {
@@ -192,11 +192,11 @@ function isNextRequestCookies(cookies: PartialRequest['cookies']): cookies is Ne
 /**
  * @internal
  */
-export function isAppRouter(): boolean {
+export async function isAppRouter(): Promise<boolean> {
     try {
-        const {headers} = importNextHeaders();
+        const {headers} = await importNextHeaders();
 
-        headers();
+        await headers();
     } catch {
         return false;
     }
@@ -204,7 +204,6 @@ export function isAppRouter(): boolean {
     return true;
 }
 
-function importNextHeaders(): typeof import('next/headers') {
-    // eslint-disable-next-line global-require -- Required for dynamic import
-    return require('next/headers');
+function importNextHeaders(): Promise<typeof import('next/headers')> {
+    return import('next/headers');
 }

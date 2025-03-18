@@ -33,25 +33,17 @@ describe('getHeaders', () => {
         expect(get).toHaveBeenCalledWith('test');
     });
 
-    it('should require the request context if next/headers is not available', () => {
+    it('should require the request context if next/headers is not available', async () => {
         const error = new Error('next/headers requires app router');
 
         mockHeaders.mockImplementation(() => {
             throw error;
         });
 
-        let actualError: unknown;
-
-        try {
-            getHeaders();
-        } catch (caughtError) {
-            actualError = caughtError;
-        }
-
         // Ensure it rethrows the exact same error.
         // It is important because Next uses the error type to detect dynamic routes based
         // on usage of headers or cookies
-        expect(actualError).toBe(error);
+        await expect(() => getHeaders()).rejects.toBe(error);
     });
 
     type RequestContextScenario = {
@@ -150,25 +142,17 @@ describe('getCookies', () => {
         expect(set).toHaveBeenCalledWith('test', 'value', options);
     });
 
-    it('should require the request context if next/headers is not available', () => {
+    it('should require the request context if next/headers is not available', async () => {
         const error = new Error('next/headers requires app router');
 
         mockCookies.mockImplementation(() => {
             throw error;
         });
 
-        let actualError: unknown;
-
-        try {
-            getCookies();
-        } catch (caughtError) {
-            actualError = caughtError;
-        }
-
         // Ensure it rethrows the exact same error.
         // It is important because Next uses the error type to detect dynamic routes based
         // on usage of headers or cookies
-        expect(actualError).toBe(error);
+        await expect(() => getCookies()).rejects.toBe(error);
     });
 
     type RequestContextScenario = {
@@ -434,15 +418,15 @@ describe('isAppRouter', () => {
         mockHeaders.mockReset();
     });
 
-    it('should return true if next/headers is available', () => {
-        expect(isAppRouter()).toBe(true);
+    it('should return true if next/headers is available', async () => {
+        await expect(isAppRouter()).resolves.toBeTrue();
     });
 
-    it('should return false if next/headers is not available', () => {
+    it('should return false if next/headers is not available', async () => {
         mockHeaders.mockImplementation(() => {
             throw new Error('next/headers requires app router');
         });
 
-        expect(isAppRouter()).toBe(false);
+        await expect(isAppRouter()).resolves.toBeFalse();
     });
 });
