@@ -1,4 +1,4 @@
-import {NextRequest, NextResponse} from 'next/server';
+import type {NextRequest, NextResponse} from 'next/server';
 import {NextApiRequest} from 'next';
 import {CookieOptions, getCookies, getHeaders, isAppRouter, PartialRequest, PartialResponse} from '@/headers';
 

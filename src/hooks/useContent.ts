@@ -1,5 +1,6 @@
 import {useContent as useContentReact, UseContentOptions, SlotContent, VersionedSlotId} from '@croct/plug-react';
-import {NextRouter, useRouter as usePageRouter} from 'next/router';
+// eslint-disable-next-line import/extensions -- Extension needed to work on both CJS and ESM
+import {NextRouter, useRouter as usePageRouter} from 'next/router.js';
 
 export type {UseContentOptions} from '@croct/plug-react';
 
