@@ -1,7 +1,13 @@
+/**
+ * @internal
+ */
 export enum QueryParameter {
     PREVIEW_TOKEN = 'croct-preview'
 }
 
+/**
+ * @internal
+ */
 export enum Header {
     USER_AGENT = 'user-agent',
     REFERRER = 'referer',

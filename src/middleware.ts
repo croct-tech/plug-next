@@ -1,4 +1,5 @@
-import {type NextRequest, type NextMiddleware, type NextFetchEvent, NextResponse} from 'next/server';
+import type {NextRequest, NextFetchEvent, NextMiddleware} from 'next/server';
+import {NextResponse} from 'next/server';
 import cookie from 'cookie';
 import {Token} from '@croct/sdk/token';
 import {base64UrlDecode} from '@croct/sdk/base64Url';

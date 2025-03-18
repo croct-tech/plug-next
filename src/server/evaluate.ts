@@ -72,8 +72,8 @@ export async function evaluate<T extends JsonValue>(query: string, options: Eval
     });
 }
 
-export function cql<T extends JsonValue>(fragments: TemplateStringsArray, ...args: JsonValue[]): Promise<T> {
-    if (!isAppRouter()) {
+export async function cql<T extends JsonValue>(fragments: TemplateStringsArray, ...args: JsonValue[]): Promise<T> {
+    if (!await isAppRouter()) {
         return Promise.reject(
             new Error(
                 'cql() can only be used with App Router. '

@@ -22,4 +22,12 @@ module.exports = {
             version: 'detect',
         },
     },
+    overrides: [
+        {
+            files: ['jest.config.mjs', 'babel.config.mjs'],
+            rules: {
+                'import/no-default-export': 'off',
+            },
+        },
+    ],
 };

@@ -19,6 +19,7 @@ jest.mock(
 describe('useContent', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE;
     });
 
     it('should forward the call to useContent', () => {
@@ -34,6 +35,8 @@ describe('useContent', () => {
     });
 
     it('should use the locale from the router', () => {
+        process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'pt';
+
         jest.mocked(useContentMock).mockReturnValue({});
 
         jest.mocked(useRouter).mockReturnValue({locale: 'en'} as NextRouter);

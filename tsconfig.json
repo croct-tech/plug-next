@@ -26,6 +26,7 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    "stripInternal": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,

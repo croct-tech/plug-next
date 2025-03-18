@@ -1,4 +1,5 @@
-import {NextRequest, NextResponse, NextFetchEvent, NextMiddleware} from 'next/server';
+import type {NextRequest, NextFetchEvent, NextMiddleware} from 'next/server';
+import {NextResponse} from 'next/server';
 import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
 import {ApiKey} from '@croct/sdk/apiKey';

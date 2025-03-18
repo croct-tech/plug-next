@@ -1,7 +1,13 @@
 type Normalizer<V, R> = (value: V) => R;
 
+/**
+ * @internal
+ */
 export function getEnvValue(value: string|undefined): string|undefined;
 
+/**
+ * @internal
+ */
 export function getEnvValue<V extends string|undefined, R>(value: V, normalize: Normalizer<V, R>): R;
 
 /**
@@ -25,8 +31,14 @@ export function getEnvFlag(value: string|undefined): boolean {
     return getEnvValue(value, flag => flag === 'true');
 }
 
+/**
+ * @internal
+ */
 export function getEnvEntry<K extends string, V extends string|undefined>(key: K, value: V): Record<K, V>|undefined;
 
+/**
+ * @internal
+ */
 export function getEnvEntry<K extends string, V extends string|undefined, R>(
   key: K,
   value: V,

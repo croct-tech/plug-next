@@ -4,24 +4,42 @@ import type {GetServerSidePropsContext, NextApiRequest, NextApiResponse} from 'n
 import type {cookies, headers} from 'next/headers';
 import cookie from 'cookie';
 
+/**
+ * @internal
+ */
 export type HeaderReader = Pick<Awaited<ReturnType<typeof headers>>, 'get'>;
 
+/**
+ * @internal
+ */
 export type CookieReader = {
     get: (name: string) => {value: string}|undefined,
 };
 
+/**
+ * @internal
+ */
 export type CookieOptions = NonNullable<Parameters<Awaited<ReturnType<typeof cookies>>['set']>[2]>;
 
+/**
+ * @internal
+ */
 export type CookieAccessor = CookieReader & {
     set: (name: string, value: string, options?: CookieOptions) => void,
 };
 
 type PageRequest = Pick<GetServerSidePropsContext['req'], 'headers' | 'cookies'>;
 
+/**
+ * @internal
+ */
 export type PartialRequest = Pick<NextRequest, 'headers' | 'cookies'>
     | Pick<NextApiRequest, 'headers' | 'cookies'>
     | PageRequest;
 
+/**
+ * @internal
+ */
 export type PartialResponse = Pick<NextResponse, 'headers' | 'cookies'>
     | Pick<NextApiResponse, 'getHeader' | 'setHeader'>
     | Pick<ServerResponse, 'getHeader' | 'setHeader'>;
@@ -34,9 +52,9 @@ export type RouteContext = {
 /**
  * @internal
  */
-export function getHeaders(route?: RouteContext): Promise<HeaderReader> {
+export async function getHeaders(route?: RouteContext): Promise<HeaderReader> {
     try {
-        const {headers} = importNextHeaders();
+        const {headers} = await importNextHeaders();
 
         return headers();
     } catch (error) {
@@ -71,9 +89,9 @@ export function getHeaders(route?: RouteContext): Promise<HeaderReader> {
 /**
  * @internal
  */
-export function getCookies(route?: RouteContext): Promise<CookieAccessor> {
+export async function getCookies(route?: RouteContext): Promise<CookieAccessor> {
     try {
-        const {cookies} = importNextHeaders();
+        const {cookies} = await importNextHeaders();
 
         return cookies();
     } catch (error) {
@@ -174,11 +192,11 @@ function isNextRequestCookies(cookies: PartialRequest['cookies']): cookies is Ne
 /**
  * @internal
  */
-export function isAppRouter(): boolean {
+export async function isAppRouter(): Promise<boolean> {
     try {
-        const {headers} = importNextHeaders();
+        const {headers} = await importNextHeaders();
 
-        headers();
+        await headers();
     } catch {
         return false;
     }
@@ -186,7 +204,7 @@ export function isAppRouter(): boolean {
     return true;
 }
 
-function importNextHeaders(): typeof import('next/headers') {
-    // eslint-disable-next-line global-require -- Required for dynamic import
-    return require('next/headers');
+function importNextHeaders(): Promise<typeof import('next/headers.js')> {
+    // eslint-disable-next-line import/extensions -- Extension needed to work on both CJS and ESM
+    return import('next/headers.js');
 }

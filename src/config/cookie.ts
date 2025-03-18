@@ -1,3 +1,6 @@
+/**
+ * @internal
+ */
 export type CookieOptions = {
     name: string,
     secure?: boolean,
