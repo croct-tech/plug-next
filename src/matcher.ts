@@ -191,9 +191,9 @@ export function getRequestInfo(request: NextRequest): RequestInfo {
         const match = new RegExp(`^/${escapedLocale}((/.+?)/${escapedLocale}(.*))`).exec(urlPathName);
 
         if (match !== null) {
-            basePath = match[2] ?? basePath;
-            urlPathName = match[1] ?? urlPathName;
-            nextPathName = (match[3] === '' ? '/' : match[3]) ?? nextPathName;
+            basePath = `${match[2]}`;
+            urlPathName = `${match[1]}`;
+            nextPathName = (match[3] === '' ? '/' : match[3]);
         }
     }
 
