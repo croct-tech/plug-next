@@ -58,6 +58,20 @@ describe('useContent', () => {
         expect(useContentMock).toHaveBeenCalledWith('id', {preferredLocale: 'en'});
     });
 
+    it('should not forward undefined locales', () => {
+        jest.mocked(useContentMock).mockReturnValue({});
+
+        jest.mocked(useRouter).mockReturnValue({locale: ''} as NextRouter);
+
+        useContent('id', {
+            preferredLocale: undefined,
+        });
+
+        const calls = jest.mocked(useContentMock).mock.calls[0][1];
+
+        expect(calls).toStrictEqual({});
+    });
+
     it('should ignore empty locale', () => {
         jest.mocked(useContentMock).mockReturnValue({});
 

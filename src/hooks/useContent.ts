@@ -5,14 +5,15 @@ import {NextRouter, useRouter as usePageRouter} from 'next/router.js';
 export type {UseContentOptions} from '@croct/plug-react';
 
 function useContentNext(id: VersionedSlotId, options?: UseContentOptions<any, any>): SlotContent {
+    const {preferredLocale, ...otherOptions} = options ?? {};
     const router = useRouter();
-    const preferredLocale = getLocale(options?.preferredLocale ?? router.locale);
+    const resolvedLocale = getLocale(preferredLocale ?? router.locale);
 
     return useContentReact<any, any, any>(
         id,
-        preferredLocale !== null
-            ? {...options, preferredLocale: preferredLocale}
-            : options,
+        resolvedLocale !== null
+            ? {...otherOptions, preferredLocale: resolvedLocale}
+            : otherOptions,
     );
 }
 
