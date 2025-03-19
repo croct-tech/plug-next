@@ -87,9 +87,6 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
     return context;
 }
 
-/**
- * @internal
- */
 export async function resolvePreferredLocale(route?: RouteContext): Promise<string|null> {
     return getPreferredLocale(await getHeaders(route));
 }

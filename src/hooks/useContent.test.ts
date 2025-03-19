@@ -46,6 +46,32 @@ describe('useContent', () => {
         expect(useContentMock).toHaveBeenCalledWith('id', {preferredLocale: 'en'});
     });
 
+    it('should use the default preferred locale', () => {
+        process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'en';
+
+        jest.mocked(useContentMock).mockReturnValue({});
+
+        jest.mocked(useRouter).mockReturnValue({locale: ''} as NextRouter);
+
+        useContent('id');
+
+        expect(useContentMock).toHaveBeenCalledWith('id', {preferredLocale: 'en'});
+    });
+
+    it('should not forward undefined locales', () => {
+        jest.mocked(useContentMock).mockReturnValue({});
+
+        jest.mocked(useRouter).mockReturnValue({locale: ''} as NextRouter);
+
+        useContent('id', {
+            preferredLocale: undefined,
+        });
+
+        const calls = jest.mocked(useContentMock).mock.calls[0][1];
+
+        expect(calls).toStrictEqual({});
+    });
+
     it('should ignore empty locale', () => {
         jest.mocked(useContentMock).mockReturnValue({});
 
@@ -53,7 +79,11 @@ describe('useContent', () => {
 
         useContent('id');
 
-        expect(useContentMock).toHaveBeenCalledWith('id', undefined);
+        expect(useContentMock).toHaveBeenCalledWith('id', {});
+
+        const calls = jest.mocked(useContentMock).mock.calls[0][1];
+
+        expect(calls).toStrictEqual({});
     });
 
     it('should ignore router errors', () => {
@@ -65,7 +95,7 @@ describe('useContent', () => {
 
         useContent('id');
 
-        expect(useContentMock).toHaveBeenCalledWith('id', undefined);
+        expect(useContentMock).toHaveBeenCalledWith('id', {});
     });
 
     it('should not override the specified locale', () => {
