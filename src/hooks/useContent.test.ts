@@ -79,7 +79,11 @@ describe('useContent', () => {
 
         useContent('id');
 
-        expect(useContentMock).toHaveBeenCalledWith('id', undefined);
+        expect(useContentMock).toHaveBeenCalledWith('id', {});
+
+        const calls = jest.mocked(useContentMock).mock.calls[0][1];
+
+        expect(calls).toStrictEqual({});
     });
 
     it('should ignore router errors', () => {
@@ -91,7 +95,7 @@ describe('useContent', () => {
 
         useContent('id');
 
-        expect(useContentMock).toHaveBeenCalledWith('id', undefined);
+        expect(useContentMock).toHaveBeenCalledWith('id', {});
     });
 
     it('should not override the specified locale', () => {
