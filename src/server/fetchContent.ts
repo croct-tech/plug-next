@@ -9,10 +9,10 @@ import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {formatCause} from '@croct/sdk/error';
 import {getApiKey} from '@/config/security';
-import {RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
+import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {RouteContext} from '@/headers';
-import {getEnvEntry, getEnvFlag} from '@/config/env';
+import {getEnvEntry, getEnvFlag, getEnvValue} from '@/config/env';
 import {isDynamicServerError} from '@/errors';
 
 export type DynamicContentOptions<T extends JsonObject = JsonObject> = Omit<DynamicOptions<T>, 'apiKey' | 'appId'>;
@@ -42,15 +42,10 @@ export async function fetchContent<I extends VersionedSlotId, C extends JsonObje
     } satisfies Partial<StaticOptions>;
 
     if (rest.static === true) {
-        let preferredLocale = rest.preferredLocale ?? null;
-
-        if (preferredLocale === null) {
-            try {
-                preferredLocale = await resolvePreferredLocale(route);
-            } catch {
-                // Static content can be fetched from anywhere
-            }
-        }
+        const preferredLocale = rest.preferredLocale
+            // Use the default preferred locale for static content instead of resolvePreferredLocale,
+            // as it relies on request headers, which disables static rendering
+            ?? getEnvValue(process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE);
 
         return loadContent<I, C>(slotId, {
             ...commonOptions,
