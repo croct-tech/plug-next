@@ -5,7 +5,7 @@ import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import type {NextRequest, NextResponse} from 'next/server';
 import {fetchContent, FetchOptions} from './fetchContent';
-import {RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
+import {RequestContext, resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
 import {RouteContext} from '@/headers';
@@ -43,7 +43,6 @@ jest.mock(
         __esModule: true,
         ...jest.requireActual('@/config/context'),
         resolveRequestContext: jest.fn(),
-        resolvePreferredLocale: jest.fn(),
     }),
 );
 
@@ -76,6 +75,7 @@ describe('fetchContent', () => {
     beforeEach(() => {
         delete process.env.NEXT_PUBLIC_CROCT_DEBUG;
         delete process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL;
+        delete process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE;
     });
 
     afterEach(() => {
@@ -211,7 +211,7 @@ describe('fetchContent', () => {
         }
 
         if (scenario.preferredLocale !== undefined) {
-            jest.mocked(resolvePreferredLocale).mockResolvedValue(scenario.preferredLocale);
+            process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = scenario.preferredLocale;
         }
 
         jest.mocked(loadContent).mockResolvedValue(content);
@@ -285,8 +285,6 @@ describe('fetchContent', () => {
             static: true,
             route: route,
         });
-
-        expect(resolvePreferredLocale).toHaveBeenCalledWith(route);
     });
 
     it('should rethrow dynamic server errors', async () => {
