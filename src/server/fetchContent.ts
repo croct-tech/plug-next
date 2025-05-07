@@ -23,6 +23,8 @@ export type FetchOptions<T extends JsonObject = JsonObject> = (DynamicContentOpt
     route?: RouteContext,
 };
 
+export type {FetchResponse} from '@croct/plug-react/api';
+
 export async function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
     slotId: I,
     options: FetchOptions<SlotContent<I, C>> = {},
