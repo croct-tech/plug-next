@@ -17,22 +17,6 @@ import {createMatcher, RouterCriteria} from '@/matcher';
 const matcherRegex = /\/((?!api|_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
 const isPageRoute = createMatcher([{source: matcherRegex.source}]);
 
-export const matcher = {
-    /*
-     * Match all request paths except for the ones starting with:
-     *
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     */
-    source: matcherRegex.source,
-} satisfies RouterCriteria;
-
-export const config = {
-    matcher: [matcher],
-};
-
 const CLIENT_ID_PATTERN = /^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{32})$/;
 
 export const middleware = withCroct();
@@ -57,7 +41,7 @@ type CroctMiddlewareParams =
 
 export function withCroct(): NextMiddleware;
 export function withCroct(next: NextMiddleware): NextMiddleware;
-// eslint-disable-next-line @typescript-eslint/no-shadow -- False positive
+
 export function withCroct(next: NextMiddleware, matcher: MiddlewareMatcher): NextMiddleware;
 export function withCroct(props: CroctMiddlewareOptions): NextMiddleware;
 
