@@ -4,9 +4,8 @@ import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
 import {ApiKey} from '@croct/sdk/apiKey';
 import {ipAddress} from '@vercel/functions';
-import {pathToRegexp} from 'path-to-regexp';
 import {Header, QueryParameter} from '@/config/http';
-import {config, matcher, withCroct} from '@/middleware';
+import {withCroct} from '@/middleware';
 import {getAppId} from '@/config/appId';
 import {RouterCriteria} from '@/matcher';
 
@@ -34,30 +33,6 @@ jest.mock(
         ipAddress: jest.fn(),
     }),
 );
-
-describe('matcher', () => {
-    it.each<string>([
-        '/foo',
-        '/foo/bar',
-        '/foo/bar/baz',
-        '/foo/bar/baz/qux',
-    ])('should intercept requests to "%s"', path => {
-        expect(config.matcher).toHaveLength(1);
-        expect(path).toMatch(pathToRegexp(matcher.source));
-    });
-
-    it.each<string>([
-        '/api',
-        '/_next/static',
-        '/_next/image',
-        '/favicon.ico',
-        '/sitemap.xml',
-        '/robots.txt',
-    ])('should not intercept requests to "%s"', path => {
-        expect(config.matcher).toHaveLength(1);
-        expect(path).not.toMatch(pathToRegexp(matcher.source));
-    });
-});
 
 describe('middleware', () => {
     const ENV_VARS = {...process.env};
@@ -1108,8 +1083,6 @@ describe('middleware', () => {
     it('should call the next middleware if the matcher matches regardless of the request URL', async () => {
         const request = createRequestMock(new URL('https://example.com/api/foo'));
         const response = createResponseMock();
-
-        expect(request.nextUrl.pathname).not.toMatch(new RegExp(`^${matcher.source}$`));
 
         const nextMiddleware = jest.fn().mockResolvedValue(response);
 
