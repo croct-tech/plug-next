@@ -1147,6 +1147,8 @@ describe('middleware', () => {
         const request = createRequestMock();
         const response = createResponseMock();
 
+        request.headers.set('x-custom-header', 'custom-value');
+
         const nextResponse = NextResponse.next;
 
         const spy = jest.spyOn(NextResponse, 'next').mockReturnValue(response);
@@ -1168,6 +1170,8 @@ describe('middleware', () => {
         const headers = spy.mock.calls[0][0]?.request?.headers;
 
         expect(headers?.get(Header.CLIENT_ID)).not.toBeNull();
+
+        expect(headers?.get('x-custom-header')).toBe('custom-value');
 
         expect(nextResponse).toBe(NextResponse.next);
     });
