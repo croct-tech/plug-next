@@ -263,11 +263,9 @@ async function handleRequest(
     NextResponse.next = ({request: modifiedRequest = {}, ...init} = {}): NextResponse => {
         const mergedHeaders = new Headers(request.headers);
 
-        if (modifiedRequest.headers !== undefined) {
-            modifiedRequest.headers.forEach((value, name) => {
-                mergedHeaders.set(name, value);
-            });
-        }
+        modifiedRequest.headers?.forEach((value, name) => {
+            mergedHeaders.set(name, value);
+        });
 
         return nextResponse({
             ...init,
