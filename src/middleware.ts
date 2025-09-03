@@ -92,9 +92,15 @@ export function withCroct(...args: CroctMiddlewareParams): NextMiddleware {
             headers.set(Header.PREFERRED_LOCALE, locale);
         }
 
-        const ip = ipAddress(request);
+        const ip = ipAddress(request)
+            ?? request.headers
+                .get('x-forwarded-for')
+                ?.split(',')[0]
+                .trim()
+            ?? request.headers.get('x-real-ip')
+            ?? null;
 
-        if (ip !== undefined) {
+        if (ip !== null) {
             headers.set(Header.CLIENT_IP, ip);
         }
 

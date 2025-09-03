@@ -411,13 +411,76 @@ describe('middleware', () => {
         expect(request.headers.get(Header.USER_AGENT)).toBe(userAgent);
     });
 
-    it('should forward the client IP through the request headers', async () => {
+    it('should forward the client IP from the ipAddress through the request headers', async () => {
         const request = createRequestMock();
         const response = createResponseMock();
 
         const ip = '127.0.0.1';
 
         jest.mocked(ipAddress).mockReturnValue(ip);
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
+
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(ipAddress).toHaveBeenCalledWith(request);
+
+        expect(request.headers.get(Header.CLIENT_IP)).toBe(ip);
+    });
+
+    it('should forward the client IP from the x-real-ip header through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const ip = '127.0.0.1';
+
+        request.headers.set('x-real-ip', ip);
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
+
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(ipAddress).toHaveBeenCalledWith(request);
+
+        expect(request.headers.get(Header.CLIENT_IP)).toBe(ip);
+    });
+
+    it('should forward the client IP from the x-forwarded-for header through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const ip = '127.0.0.1';
+
+        request.headers.set('x-forwarded-for', ip);
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const nextMiddleware = jest.fn().mockResolvedValue(response);
+
+        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+
+        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+
+        expect(ipAddress).toHaveBeenCalledWith(request);
+
+        expect(request.headers.get(Header.CLIENT_IP)).toBe(ip);
+    });
+
+    it('should forward the client IP from the first x-forwarded-for header through the request headers', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const ip = '127.0.0.1';
+
+        request.headers.set('x-forwarded-for', `${ip},192.168.0.2`);
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
