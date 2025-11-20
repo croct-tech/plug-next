@@ -61,7 +61,7 @@
     "@testing-library/react": "^16.1.0",
     "@types/cookie": "^0.6.0",
     "@types/jest": "^29.2.3",
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/set-cookie-parser": "^2.4.7",
