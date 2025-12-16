@@ -18,8 +18,6 @@
 <br/>
 <p align="center">
     <a href="https://www.npmjs.com/package/@croct/plug-next"><img alt="Version" src="https://img.shields.io/npm/v/@croct/plug-next"/></a>
-    <a href="https://qlty.sh/gh/croct-tech/projects/plug-next"><img src="https://qlty.sh/badges/7c2ce5e0-bd0e-4d5c-8b0a-c2447ff716d3/coverage.svg" alt="Code Coverage" /></a>
-<a href="https://qlty.sh/gh/croct-tech/projects/plug-next"><img src="https://qlty.sh/badges/7c2ce5e0-bd0e-4d5c-8b0a-c2447ff716d3/maintainability.svg" alt="Maintainability" /></a>
 </p>
 
 ## Introduction
