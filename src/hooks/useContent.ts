@@ -1,12 +1,12 @@
 'use client';
 
-import {useContent as useContentReact, UseContentOptions, SlotContent, VersionedSlotId} from '@croct/plug-react';
+import {useContent as useContentReact, UseContentOptions, FetchResponse, VersionedSlotId} from '@croct/plug-react';
 // eslint-disable-next-line import/extensions -- Extension needed to work on both CJS and ESM
 import {NextRouter, useRouter as usePageRouter} from 'next/router.js';
 
-export type {UseContentOptions} from '@croct/plug-react';
+export type {UseContentOptions, FetchResponse} from '@croct/plug-react';
 
-function useContentNext(id: VersionedSlotId, options?: UseContentOptions<any, any>): SlotContent {
+function useContentNext(id: VersionedSlotId, options?: UseContentOptions<any, any>): FetchResponse<any, any> {
     const {preferredLocale, ...otherOptions} = options ?? {};
     const router = useRouter();
     const resolvedLocale = getLocale(preferredLocale ?? router.locale);

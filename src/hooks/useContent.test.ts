@@ -37,7 +37,9 @@ describe('useContent', () => {
     it('should use the locale from the router', () => {
         process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'pt';
 
-        jest.mocked(useContentMock).mockReturnValue({});
+        jest.mocked(useContentMock).mockReturnValue({
+            content: {},
+        });
 
         jest.mocked(useRouter).mockReturnValue({locale: 'en'} as NextRouter);
 
@@ -49,7 +51,9 @@ describe('useContent', () => {
     it('should use the default preferred locale', () => {
         process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'en';
 
-        jest.mocked(useContentMock).mockReturnValue({});
+        jest.mocked(useContentMock).mockReturnValue({
+            content: {},
+        });
 
         jest.mocked(useRouter).mockReturnValue({locale: ''} as NextRouter);
 
@@ -59,7 +63,9 @@ describe('useContent', () => {
     });
 
     it('should not forward undefined locales', () => {
-        jest.mocked(useContentMock).mockReturnValue({});
+        jest.mocked(useContentMock).mockReturnValue({
+            content: {},
+        });
 
         jest.mocked(useRouter).mockReturnValue({locale: ''} as NextRouter);
 
@@ -73,7 +79,9 @@ describe('useContent', () => {
     });
 
     it('should ignore empty locale', () => {
-        jest.mocked(useContentMock).mockReturnValue({});
+        jest.mocked(useContentMock).mockReturnValue({
+            content: {},
+        });
 
         jest.mocked(useRouter).mockReturnValue({locale: ''} as NextRouter);
 
@@ -87,7 +95,9 @@ describe('useContent', () => {
     });
 
     it('should ignore router errors', () => {
-        jest.mocked(useContentMock).mockReturnValue({});
+        jest.mocked(useContentMock).mockReturnValue({
+            content: {},
+        });
 
         jest.mocked(useRouter).mockImplementation(() => {
             throw new Error();
@@ -99,7 +109,9 @@ describe('useContent', () => {
     });
 
     it('should not override the specified locale', () => {
-        jest.mocked(useContentMock).mockReturnValue({});
+        jest.mocked(useContentMock).mockReturnValue({
+            content: {},
+        });
 
         jest.mocked(useRouter).mockReturnValue({locale: 'en'} as NextRouter);
 
