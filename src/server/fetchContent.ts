@@ -5,6 +5,7 @@ import {
     FetchResponse,
 } from '@croct/plug-react/api';
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
+import type {FetchResponseOptions} from '@croct/sdk/contentFetcher';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {formatCause} from '@croct/sdk/error';
@@ -25,10 +26,14 @@ export type FetchOptions<T extends JsonObject = JsonObject> = (DynamicContentOpt
 
 export type {FetchResponse} from '@croct/plug-react/api';
 
-export async function fetchContent<I extends VersionedSlotId, C extends JsonObject>(
+export async function fetchContent<
+    I extends VersionedSlotId,
+    C extends JsonObject,
+    O extends FetchResponseOptions = FetchResponseOptions
+>(
     slotId: I,
-    options: FetchOptions<SlotContent<I, C>> = {},
-): Promise<FetchResponse<I, C>> {
+    options: Pick<O, keyof FetchResponseOptions> & FetchOptions<SlotContent<I, C>> = {},
+): Promise<FetchResponse<I, C, never, O>> {
     const {logger, route, ...rest} = options;
 
     const timeout = getDefaultFetchTimeout();
@@ -49,7 +54,7 @@ export async function fetchContent<I extends VersionedSlotId, C extends JsonObje
             // as it relies on request headers, which disables static rendering
             ?? getEnvValue(process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE);
 
-        return loadContent<I, C>(slotId, {
+        return loadContent<I, C, O>(slotId, {
             ...commonOptions,
             ...rest,
             ...(preferredLocale !== null && {preferredLocale: preferredLocale}),
@@ -75,7 +80,7 @@ export async function fetchContent<I extends VersionedSlotId, C extends JsonObje
         );
     }
 
-    return loadContent<I, C>(slotId, {
+    return loadContent<I, C, O>(slotId, {
         clientIp: context.clientIp ?? '127.0.0.1',
         ...(context.previewToken !== undefined && {previewToken: context.previewToken}),
         ...(context.userToken !== undefined && {userToken: context.userToken}),

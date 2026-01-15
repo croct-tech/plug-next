@@ -44,9 +44,9 @@
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
   },
   "dependencies": {
-    "@croct/plug": "^0.20.0",
-    "@croct/plug-react": "^0.14.0",
-    "@croct/sdk": "^0.19.0",
+    "@croct/sdk": "https://pkg.pr.new/@croct/sdk@485",
+    "@croct/plug": "https://pkg.pr.new/@croct/plug@358",
+    "@croct/plug-react": "https://pkg.pr.new/@croct/plug-react@570",
     "@vercel/functions": "^3.0.0",
     "cookie": "^0.7.0",
     "path-to-regexp": "^6.3.0"
