@@ -1,6 +1,12 @@
 import type {cookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
-import {getRequestContext, RequestContext, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
+import {
+    getRequestContext,
+    getRequestUri,
+    RequestContext,
+    resolvePreferredLocale,
+    resolveRequestContext,
+} from '@/config/context';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
 import {getCookies, getHeaders, PartialRequest, PartialResponse, RouteContext} from '@/headers';
@@ -238,5 +244,33 @@ describe('resolvePreferredLocale', () => {
         jest.mocked(getHeaders).mockResolvedValue(new Headers());
 
         await expect(resolvePreferredLocale()).resolves.toBeNull();
+    });
+});
+
+describe('getRequestUri', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('should return the request URI from the headers', async () => {
+        const headers = new Headers();
+
+        headers.set(Header.REQUEST_URI, 'http://localhost:3000/path');
+
+        const route: RouteContext = {
+            req: {} as PartialRequest,
+            res: {} as PartialResponse,
+        };
+
+        jest.mocked(getHeaders).mockResolvedValue(headers);
+
+        await expect(getRequestUri(route)).resolves.toEqual('http://localhost:3000/path');
+        expect(getHeaders).toHaveBeenCalledWith(route);
+    });
+
+    it('should return null when the request URI is missing', async () => {
+        jest.mocked(getHeaders).mockResolvedValue(new Headers());
+
+        await expect(getRequestUri()).resolves.toBeNull();
     });
 });

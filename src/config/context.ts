@@ -18,6 +18,10 @@ export type RequestContext = {
     preferredLocale?: string,
 };
 
+export async function getRequestUri(route?: RouteContext): Promise<string|null> {
+    return (await getHeaders(route)).get(Header.REQUEST_URI);
+}
+
 /**
  * @internal
  */
