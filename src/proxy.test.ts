@@ -1,11 +1,11 @@
-import type {NextRequest, NextFetchEvent, NextMiddleware} from 'next/server';
+import type {NextRequest, NextFetchEvent, NextProxy} from 'next/server';
 import {NextResponse} from 'next/server';
 import parseSetCookies, {Cookie} from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
 import {ApiKey} from '@croct/sdk/apiKey';
 import {ipAddress} from '@vercel/functions';
 import {Header, QueryParameter} from '@/config/http';
-import {withCroct} from '@/middleware';
+import {withCroct} from '@/proxy';
 import {getAppId} from '@/config/appId';
 import {RouterCriteria} from '@/matcher';
 
@@ -34,7 +34,7 @@ jest.mock(
     }),
 );
 
-describe('middleware', () => {
+describe('proxy', () => {
     const ENV_VARS = {...process.env};
 
     function createRequestMock(url = new URL('https://example.com/')): NextRequest {
@@ -266,11 +266,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(request.headers.get(Header.PREFERRED_LOCALE)).toBe(locale);
     });
@@ -287,11 +287,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(request.headers.get(Header.PREFERRED_LOCALE)).toBeNull();
     });
@@ -300,11 +300,11 @@ describe('middleware', () => {
         const request = createRequestMock();
         const response = createResponseMock();
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(request.headers.get(Header.REQUEST_URI)).toEqual(request.nextUrl.toString());
     });
@@ -322,11 +322,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(request.headers.get(Header.REQUEST_URI)).toEqual(baseUrl);
     });
@@ -402,11 +402,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(request.headers.get(Header.USER_AGENT)).toBe(userAgent);
     });
@@ -421,11 +421,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(ipAddress).toHaveBeenCalledWith(request);
 
@@ -442,11 +442,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(ipAddress).toHaveBeenCalledWith(request);
 
@@ -463,11 +463,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(ipAddress).toHaveBeenCalledWith(request);
 
@@ -484,11 +484,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(ipAddress).toHaveBeenCalledWith(request);
 
@@ -515,11 +515,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(request.headers.get(Header.PREVIEW_TOKEN)).toBe(previewToken);
 
@@ -550,11 +550,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware: NextMiddleware = jest.fn().mockReturnValue(response);
+        const nextProxy: NextProxy = jest.fn().mockReturnValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(request.headers.get(Header.PREVIEW_TOKEN)).toBeNull();
 
@@ -587,11 +587,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware: NextMiddleware = jest.fn().mockReturnValue(response);
+        const nextProxy: NextProxy = jest.fn().mockReturnValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             name: cookieName,
@@ -620,11 +620,11 @@ describe('middleware', () => {
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware: NextMiddleware = jest.fn().mockReturnValue(response);
+        const nextProxy: NextProxy = jest.fn().mockReturnValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(request.headers.get(Header.PREVIEW_TOKEN)).toBeNull();
 
@@ -1143,40 +1143,40 @@ describe('middleware', () => {
         expect(request.headers.get(Header.PREFERRED_LOCALE)).toBe(locale);
     });
 
-    it('should call the next middleware if the matcher matches regardless of the request URL', async () => {
+    it('should call the next proxy if the matcher matches regardless of the request URL', async () => {
         const request = createRequestMock(new URL('https://example.com/api/foo'));
         const response = createResponseMock();
 
-        const nextMiddleware = jest.fn().mockResolvedValue(response);
+        const nextProxy = jest.fn().mockResolvedValue(response);
 
-        const middlewareMatcher: RouterCriteria[] = [{
+        const proxyMatcher: RouterCriteria[] = [{
             source: '/api/foo',
         }];
 
-        const result = withCroct({matcher: middlewareMatcher, next: nextMiddleware})(request, fetchEvent);
+        const result = withCroct({matcher: proxyMatcher, next: nextProxy})(request, fetchEvent);
 
         await expect(result).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
     });
 
-    it('should never call the next middleware if the matcher does not match', async () => {
+    it('should never call the next proxy if the matcher does not match', async () => {
         const request = createRequestMock(new URL('https://example.com/foo'));
         const response = createResponseMock();
 
         jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn();
+        const nextProxy = jest.fn();
 
-        const middlewareMatcher: RouterCriteria[] = [{
+        const proxyMatcher: RouterCriteria[] = [{
             source: '/api/foo',
         }];
 
-        const result = withCroct({matcher: middlewareMatcher, next: nextMiddleware})(request, fetchEvent);
+        const result = withCroct({matcher: proxyMatcher, next: nextProxy})(request, fetchEvent);
 
         await expect(result).resolves.toBe(response);
 
-        expect(nextMiddleware).not.toHaveBeenCalled();
+        expect(nextProxy).not.toHaveBeenCalled();
     });
 
     it('should always override the headers', async () => {
@@ -1189,7 +1189,7 @@ describe('middleware', () => {
 
         const spy = jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        const nextMiddleware = jest.fn(
+        const nextProxy = jest.fn(
             () => NextResponse.next({
                 request: {
                     headers: new Headers(),
@@ -1197,9 +1197,9 @@ describe('middleware', () => {
             }),
         );
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(NextResponse.next).toHaveBeenCalledTimes(1);
 
@@ -1212,17 +1212,17 @@ describe('middleware', () => {
         expect(nextResponse).toBe(NextResponse.next);
     });
 
-    it('should set the headers if the middleware does not return a response', async () => {
+    it('should set the headers if the proxy does not return a response', async () => {
         const request = createRequestMock();
         const response = createResponseMock();
 
-        const nextMiddleware = jest.fn();
+        const nextProxy = jest.fn();
 
         const spy = jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).resolves.toBe(response);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
-        expect(nextMiddleware).toHaveBeenCalledWith(request, fetchEvent);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
         expect(spy).toHaveBeenCalledTimes(1);
 
@@ -1231,20 +1231,20 @@ describe('middleware', () => {
         expect(headers?.get(Header.CLIENT_ID)).not.toBeNull();
     });
 
-    it('should restore the original next function even if the next middleware throws an error', async () => {
+    it('should restore the original next function even if the next proxy throws an error', async () => {
         const request = createRequestMock();
 
         const nextResponse = NextResponse.next;
 
         const error = new Error('Test');
 
-        const nextMiddleware = jest.fn(
+        const nextProxy = jest.fn(
             () => {
                 throw error;
             },
         );
 
-        await expect(withCroct(nextMiddleware)(request, fetchEvent)).rejects.toBe(error);
+        await expect(withCroct(nextProxy)(request, fetchEvent)).rejects.toBe(error);
 
         expect(nextResponse).toBe(NextResponse.next);
     });
