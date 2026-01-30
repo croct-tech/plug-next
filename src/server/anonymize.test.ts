@@ -3,7 +3,8 @@ import {Token} from '@croct/sdk/token';
 import type {NextRequest, NextResponse} from 'next/server';
 import {issueToken} from '@/config/security';
 import {anonymize} from '@/server/anonymize';
-import {getCookies, RouteContext} from '@/headers';
+import type {RouteContext} from '@/headers';
+import {getCookies} from '@/headers';
 
 jest.mock(
     '@/config/security',

@@ -1,13 +1,14 @@
 import type {NextRequest, NextFetchEvent, NextProxy} from 'next/server';
 import {NextResponse} from 'next/server';
-import parseSetCookies, {Cookie} from 'set-cookie-parser';
+import type {Cookie} from 'set-cookie-parser';
+import parseSetCookies from 'set-cookie-parser';
 import {Token} from '@croct/sdk/token';
 import {ApiKey} from '@croct/sdk/apiKey';
 import {ipAddress} from '@vercel/functions';
 import {Header, QueryParameter} from '@/config/http';
 import {withCroct} from '@/proxy';
 import {getAppId} from '@/config/appId';
-import {RouterCriteria} from '@/matcher';
+import type {RouterCriteria} from '@/matcher';
 
 jest.mock(
     'crypto',
@@ -743,10 +744,10 @@ describe('proxy', () => {
         now?: number,
         authentication: boolean,
         currentApiKey?: string,
-        currentUserId?: string|null,
+        currentUserId?: string | null,
         requestToken?: {
             apiKey?: string,
-            userId: string|null,
+            userId: string | null,
             expiration: number,
             issueTime: number,
             signed: boolean,

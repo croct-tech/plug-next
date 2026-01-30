@@ -1,5 +1,6 @@
 import type {NextRequest} from 'next/server';
-import {createMatcher, getRequestInfo, RouterCriteria} from '@/matcher';
+import type {RouterCriteria} from '@/matcher';
+import {createMatcher, getRequestInfo} from '@/matcher';
 
 describe('createMatcher', () => {
     type RequestOptions = {

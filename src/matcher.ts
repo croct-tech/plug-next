@@ -1,13 +1,13 @@
 import type {NextRequest} from 'next/server';
 import {pathToRegexp} from 'path-to-regexp';
 
-type ValueBasedCondition<V extends string|RegExp = string> = {
+type ValueBasedCondition<V extends string | RegExp = string> = {
     type: 'header' | 'query' | 'cookie',
     key: string,
     value?: V,
 };
 
-type HostBasedCondition<V extends string|RegExp = string> = {
+type HostBasedCondition<V extends string | RegExp = string> = {
     type: 'host',
     value: V,
 };
@@ -64,7 +64,7 @@ function createPredicate(criteria: RouterCriteria): RouterMatcher<RequestInfo> {
 
     try {
         regex = parseSource(criteria.source);
-    } catch (error) {
+    } catch {
         throw new Error(`Invalid source pattern: ${criteria.source}`);
     }
 

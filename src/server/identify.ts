@@ -1,6 +1,7 @@
 import {issueToken} from '@/config/security';
 import {getUserTokenCookieOptions} from '@/config/cookie';
-import {getCookies, RouteContext, CookieAccessor} from '@/headers';
+import type {RouteContext, CookieAccessor} from '@/headers';
+import {getCookies} from '@/headers';
 
 export async function identify(userId: string, route?: RouteContext): Promise<void> {
     let cookies: CookieAccessor;
