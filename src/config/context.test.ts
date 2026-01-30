@@ -1,15 +1,11 @@
 import type {cookies} from 'next/headers';
 import {Token} from '@croct/sdk/token';
-import {
-    getRequestContext,
-    getRequestUri,
-    RequestContext,
-    resolvePreferredLocale,
-    resolveRequestContext,
-} from '@/config/context';
+import type {RequestContext} from '@/config/context';
+import {getRequestContext, getRequestUri, resolvePreferredLocale, resolveRequestContext} from '@/config/context';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
-import {getCookies, getHeaders, PartialRequest, PartialResponse, RouteContext} from '@/headers';
+import type {PartialRequest, PartialResponse, RouteContext} from '@/headers';
+import {getCookies, getHeaders} from '@/headers';
 
 type ReadonlyCookies = Awaited<ReturnType<typeof cookies>>;
 

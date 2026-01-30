@@ -1,14 +1,17 @@
 /* eslint-disable testing-library/no-debugging-utils -- Needed for testing */
-import {fetchContent as loadContent, FetchOptions as ResolvedFetchOptions} from '@croct/plug-react/api';
-import {FetchResponse} from '@croct/plug/plug';
+import type {FetchOptions as ResolvedFetchOptions} from '@croct/plug-react/api';
+import {fetchContent as loadContent} from '@croct/plug-react/api';
+import type {FetchResponse} from '@croct/plug/plug';
 import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import type {NextRequest, NextResponse} from 'next/server';
-import {fetchContent, FetchOptions} from './fetchContent';
-import {RequestContext, resolveRequestContext} from '@/config/context';
+import type {FetchOptions} from './fetchContent';
+import {fetchContent} from './fetchContent';
+import type {RequestContext} from '@/config/context';
+import {resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
-import {RouteContext} from '@/headers';
+import type {RouteContext} from '@/headers';
 
 jest.mock(
     'next/headers',
@@ -281,10 +284,13 @@ describe('fetchContent', () => {
             },
         });
 
-        await fetchContent('slot-id', {
+        await expect(fetchContent('slot-id', {
             static: true,
             route: route,
-        });
+        }))
+            .resolves
+            .not
+            .toThrow();
     });
 
     it('should rethrow dynamic server errors', async () => {
