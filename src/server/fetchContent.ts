@@ -1,18 +1,19 @@
-import {
+import type {
     DynamicContentOptions as DynamicOptions,
     StaticContentOptions as StaticOptions,
-    fetchContent as loadContent,
     FetchResponse,
 } from '@croct/plug-react/api';
+import {fetchContent as loadContent} from '@croct/plug-react/api';
 import type {SlotContent, VersionedSlotId, JsonObject} from '@croct/plug-react';
 import type {FetchResponseOptions} from '@croct/sdk/contentFetcher';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {formatCause} from '@croct/sdk/error';
 import {getApiKey} from '@/config/security';
-import {RequestContext, resolveRequestContext} from '@/config/context';
+import type {RequestContext} from '@/config/context';
+import {resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
-import {RouteContext} from '@/headers';
+import type {RouteContext} from '@/headers';
 import {getEnvEntry, getEnvFlag, getEnvValue} from '@/config/env';
 import {isDynamicServerError} from '@/errors';
 
@@ -29,7 +30,7 @@ export type {FetchResponse} from '@croct/plug-react/api';
 export async function fetchContent<
     I extends VersionedSlotId,
     C extends JsonObject,
-    O extends FetchResponseOptions = FetchResponseOptions
+    O extends FetchResponseOptions = FetchResponseOptions,
 >(
     slotId: I,
     options: Pick<O, keyof FetchResponseOptions> & FetchOptions<SlotContent<I, C>> = {},

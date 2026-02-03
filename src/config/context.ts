@@ -1,7 +1,8 @@
 import {Token} from '@croct/sdk/token';
 import {Header} from '@/config/http';
 import {getUserTokenCookieOptions} from '@/config/cookie';
-import {CookieReader, getCookies, getHeaders, HeaderReader, RouteContext} from '@/headers';
+import type {CookieReader, HeaderReader, RouteContext} from '@/headers';
+import {getCookies, getHeaders} from '@/headers';
 import {getEnvValue} from '@/config/env';
 
 /**
@@ -18,7 +19,7 @@ export type RequestContext = {
     preferredLocale?: string,
 };
 
-export async function getRequestUri(route?: RouteContext): Promise<string|null> {
+export async function getRequestUri(route?: RouteContext): Promise<string | null> {
     return (await getHeaders(route)).get(Header.REQUEST_URI);
 }
 
@@ -91,11 +92,11 @@ export function getRequestContext(headers: HeaderReader, cookies: CookieReader):
     return context;
 }
 
-export async function resolvePreferredLocale(route?: RouteContext): Promise<string|null> {
+export async function resolvePreferredLocale(route?: RouteContext): Promise<string | null> {
     return getPreferredLocale(await getHeaders(route));
 }
 
-function getPreferredLocale(headers: HeaderReader): string|null {
+function getPreferredLocale(headers: HeaderReader): string | null {
     return headers.get(Header.PREFERRED_LOCALE)
         ?? getEnvValue(process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE)
         ?? null;
@@ -110,7 +111,7 @@ function getPreferredLocale(headers: HeaderReader): string|null {
  * @param headers The request headers.
  * @param cookies The request cookies.
  */
-function getUserToken(headers: HeaderReader, cookies: CookieReader): string|null {
+function getUserToken(headers: HeaderReader, cookies: CookieReader): string | null {
     const {name: cookieName} = getUserTokenCookieOptions();
     const cookie = cookies.get(cookieName);
     const cookieValue = cookie === undefined || cookie.value === '' ? null : cookie.value;

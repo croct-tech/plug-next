@@ -157,7 +157,7 @@ describe('security', () => {
             jest.useRealTimers();
         });
 
-        it.each<[string, string|undefined]>([
+        it.each<[string, string | undefined]>([
             ['an anonymous user', undefined],
             ['an identified user', 'user-id'],
         ])('should return a signed token for %s', async (_, userId) => {
@@ -222,7 +222,7 @@ describe('security', () => {
             await expect(verification).resolves.toBeTrue();
         });
 
-        it.each<[string, string|undefined]>([
+        it.each<[string, string | undefined]>([
             ['an anonymous user', undefined],
             ['an identified user', 'user-id'],
         ])('should return a unsigned token for %s', async (_, userId) => {

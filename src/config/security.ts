@@ -73,7 +73,7 @@ export function getTokenDuration(): number {
 /**
  * @internal
  */
-export function issueToken(userId: string|null = null): Promise<Token> {
+export function issueToken(userId: string | null = null): Promise<Token> {
     const token = Token.issue(getAppId(), userId)
         .withDuration(getTokenDuration());
 
