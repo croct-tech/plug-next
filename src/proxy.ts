@@ -244,6 +244,7 @@ async function handleRequest(
         });
     }
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Method is static and cannot be ignored.
     const nextResponse = NextResponse.next;
 
     NextResponse.next = ({request: modifiedRequest = {}, ...init} = {}): NextResponse => {

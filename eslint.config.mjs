@@ -15,7 +15,6 @@ export default defineConfig(
         rules: {
             'import/no-default-export': 'off',
             'no-console': 'off',
-            '@typescript-eslint/unbound-method': 'off',
             '@typescript-eslint/prefer-promise-reject-errors': 'off',
         },
     },
