@@ -3,11 +3,10 @@
  */
 
 import {render} from '@testing-library/react';
-import {
-    CroctProvider as UnderlyingProvider,
-    CroctProviderProps as ResolvedProviderProps,
-} from '@croct/plug-react/CroctProvider';
-import {CroctProvider, CroctProviderProps} from './CroctProvider';
+import type {CroctProviderProps as ResolvedProviderProps} from '@croct/plug-react/CroctProvider';
+import {CroctProvider as UnderlyingProvider} from '@croct/plug-react/CroctProvider';
+import type {CroctProviderProps} from './CroctProvider';
+import {CroctProvider} from './CroctProvider';
 import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 
 jest.mock(
@@ -18,7 +17,6 @@ jest.mock(
     }),
 );
 
-// eslint-disable-next-line no-console -- Needed to test console output.
 const consoleError = console.error;
 
 describe('<CroctProvider />', () => {
@@ -34,7 +32,6 @@ describe('<CroctProvider />', () => {
     });
 
     afterEach(() => {
-        // eslint-disable-next-line no-console -- Needed to restore the original console.error.
         console.error = consoleError;
     });
 

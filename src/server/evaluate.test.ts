@@ -1,14 +1,17 @@
 /* eslint-disable testing-library/no-debugging-utils -- Needed for testing */
-import {evaluate as executeQuery, EvaluationOptions as ResolvedEvaluationOptions} from '@croct/plug-react/api';
+import type {EvaluationOptions as ResolvedEvaluationOptions} from '@croct/plug-react/api';
+import {evaluate as executeQuery} from '@croct/plug-react/api';
 import {ApiKey, ApiKey as MockApiKey} from '@croct/sdk/apiKey';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {headers} from 'next/headers';
-import {NextRequest, NextResponse} from 'next/server';
-import {cql, evaluate, EvaluationOptions} from './evaluate';
-import {resolveRequestContext, RequestContext} from '@/config/context';
+import type {NextRequest, NextResponse} from 'next/server';
+import type {EvaluationOptions} from './evaluate';
+import {cql, evaluate} from './evaluate';
+import type {RequestContext} from '@/config/context';
+import {resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
-import {RouteContext} from '@/headers';
+import type {RouteContext} from '@/headers';
 
 jest.mock(
     'next/headers',

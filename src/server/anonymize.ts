@@ -1,6 +1,7 @@
 import {getUserTokenCookieOptions} from '@/config/cookie';
 import {issueToken} from '@/config/security';
-import {CookieAccessor, getCookies, RouteContext} from '@/headers';
+import type {CookieAccessor, RouteContext} from '@/headers';
+import {getCookies} from '@/headers';
 
 export async function anonymize(context?: RouteContext): Promise<void> {
     let cookies: CookieAccessor;

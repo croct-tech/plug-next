@@ -13,7 +13,7 @@ export type HeaderReader = Pick<Awaited<ReturnType<typeof headers>>, 'get'>;
  * @internal
  */
 export type CookieReader = {
-    get: (name: string) => {value: string}|undefined,
+    get: (name: string) => {value: string} | undefined,
 };
 
 /**
@@ -64,7 +64,7 @@ export async function getHeaders(route?: RouteContext): Promise<HeaderReader> {
     }
 
     return Promise.resolve({
-        get: (name: string): string|null => {
+        get: (name: string): string | null => {
             const requestHeaders = route.req.headers;
 
             if (isNextRequestHeaders(requestHeaders)) {
@@ -101,7 +101,7 @@ export async function getCookies(route?: RouteContext): Promise<CookieAccessor> 
     }
 
     return Promise.resolve({
-        get: (name: string): {value: string}|undefined => {
+        get: (name: string): {value: string} | undefined => {
             const response = route.res;
 
             // First check if the cookie is set in the response
@@ -204,7 +204,8 @@ export async function isAppRouter(): Promise<boolean> {
     return true;
 }
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- Extension needed to work on both CJS and ESM
 function importNextHeaders(): Promise<typeof import('next/headers.js')> {
-    // eslint-disable-next-line import/extensions -- Extension needed to work on both CJS and ESM
+// eslint-disable-next-line import-x/extensions -- Extension needed to work on both CJS and ESM
     return import('next/headers.js');
 }

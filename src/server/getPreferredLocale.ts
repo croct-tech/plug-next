@@ -1,6 +1,6 @@
 import {formatCause} from '@croct/sdk/error';
 import {resolvePreferredLocale} from '@/config/context';
-import {RouteContext} from '@/headers';
+import type {RouteContext} from '@/headers';
 import {isDynamicServerError} from '@/errors';
 
 export async function getPreferredLocale(route?: RouteContext): Promise<string> {

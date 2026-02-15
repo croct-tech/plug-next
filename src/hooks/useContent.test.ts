@@ -1,6 +1,7 @@
 import {useContent as useContentMock} from '@croct/plug-react';
 import {type NextRouter, useRouter} from 'next/router';
-import {useContent, UseContentOptions} from '@/hooks/useContent';
+import type {UseContentOptions} from '@/hooks/useContent';
+import {useContent} from '@/hooks/useContent';
 
 jest.mock(
     '@croct/plug-react',

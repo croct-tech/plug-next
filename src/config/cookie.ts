@@ -86,7 +86,7 @@ function getEnvOptions(): Partial<CookieOptions> {
     };
 }
 
-function normalizeValue(value: string|undefined, defaultValue: string): string {
+function normalizeValue(value: string | undefined, defaultValue: string): string {
     if (value === undefined || value === '') {
         return defaultValue;
     }

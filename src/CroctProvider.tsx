@@ -1,10 +1,8 @@
 'use client';
 
-import {
-    CroctProviderProps as ReactCroctProviderProps,
-    CroctProvider as ReactCroctProvider,
-} from '@croct/plug-react/CroctProvider';
-import {FunctionComponent} from 'react';
+import type {CroctProviderProps as ReactCroctProviderProps} from '@croct/plug-react/CroctProvider';
+import {CroctProvider as ReactCroctProvider} from '@croct/plug-react/CroctProvider';
+import type {FunctionComponent} from 'react';
 import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 import {getAppId} from '@/config/appId';
 import {getEnvEntry, getEnvEntryFlag} from '@/config/env';

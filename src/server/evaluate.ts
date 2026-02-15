@@ -1,12 +1,15 @@
-import {evaluate as executeQuery, EvaluationOptions as BaseOptions} from '@croct/plug-react/api';
+import type {EvaluationOptions as BaseOptions} from '@croct/plug-react/api';
+import {evaluate as executeQuery} from '@croct/plug-react/api';
 import type {JsonValue} from '@croct/plug-react';
 import {FilteredLogger} from '@croct/sdk/logging/filteredLogger';
 import {ConsoleLogger} from '@croct/sdk/logging/consoleLogger';
 import {formatCause} from '@croct/sdk/error';
 import {getApiKey} from '@/config/security';
-import {RequestContext, resolveRequestContext} from '@/config/context';
+import type {RequestContext} from '@/config/context';
+import {resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
-import {isAppRouter, RouteContext} from '@/headers';
+import type {RouteContext} from '@/headers';
+import {isAppRouter} from '@/headers';
 import {getEnvEntry, getEnvFlag} from '@/config/env';
 import {isDynamicServerError} from '@/errors';
 
@@ -113,7 +116,7 @@ function buildQuery(fragments: TemplateStringsArray, args: JsonValue[]): Prepare
     };
 }
 
-function resolveValue(value: JsonValue|undefined, index: number): string {
+function resolveValue(value: JsonValue | undefined, index: number): string {
     if (value === undefined) {
         return '';
     }
