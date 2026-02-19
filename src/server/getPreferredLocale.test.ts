@@ -1,6 +1,6 @@
 import type {NextRequest, NextResponse} from 'next/server';
 import {resolvePreferredLocale} from '@/config/context';
-import {RouteContext} from '@/headers';
+import type {RouteContext} from '@/headers';
 import {getPreferredLocale} from '@/server/getPreferredLocale';
 
 jest.mock(

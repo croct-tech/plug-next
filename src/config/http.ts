@@ -2,7 +2,7 @@
  * @internal
  */
 export enum QueryParameter {
-    PREVIEW_TOKEN = 'croct-preview'
+    PREVIEW_TOKEN = 'croct-preview',
 }
 
 /**

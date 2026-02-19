@@ -1,6 +1,7 @@
 import type {NextRequest, NextResponse} from 'next/server';
-import {NextApiRequest} from 'next';
-import {CookieOptions, getCookies, getHeaders, isAppRouter, PartialRequest, PartialResponse} from '@/headers';
+import type {NextApiRequest} from 'next';
+import type {CookieOptions, PartialRequest, PartialResponse} from '@/headers';
+import {getCookies, getHeaders, isAppRouter} from '@/headers';
 
 const mockHeaders = jest.fn();
 const mockCookies = jest.fn();
@@ -271,7 +272,7 @@ describe('getCookies', () => {
             } satisfies PartialRequest;
 
             const response: PartialResponse = {
-                getHeader: (name: string): string[]|undefined => {
+                getHeader: (name: string): string[] | undefined => {
                     if (name === 'Set-Cookie') {
                         return ['foo=bar', 'bar=baz'];
                     }
@@ -374,7 +375,7 @@ describe('getCookies', () => {
         } satisfies PartialRequest;
 
         const response: PartialResponse = {
-            getHeader: (name: string): string[]|undefined => {
+            getHeader: (name: string): string[] | undefined => {
                 if (name === 'Set-Cookie') {
                     return [
                         'foo=bar',

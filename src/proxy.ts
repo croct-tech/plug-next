@@ -5,14 +5,11 @@ import {Token} from '@croct/sdk/token';
 import {base64UrlDecode} from '@croct/sdk/base64Url';
 import {ipAddress} from '@vercel/functions';
 import {Header, QueryParameter} from '@/config/http';
-import {
-    CookieOptions,
-    getClientIdCookieOptions,
-    getPreviewCookieOptions,
-    getUserTokenCookieOptions,
-} from '@/config/cookie';
+import type {CookieOptions} from '@/config/cookie';
+import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from './config/security';
-import {createMatcher, RouterCriteria} from '@/matcher';
+import type {RouterCriteria} from '@/matcher';
+import {createMatcher} from '@/matcher';
 
 const matcherRegex = /\/((?!_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
 const isPageRoute = createMatcher([{source: matcherRegex.source}]);
@@ -21,8 +18,8 @@ const CLIENT_ID_PATTERN = /^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[
 
 export const proxy = withCroct();
 
-export type UserIdResolver = (request: NextRequest) => Promise<string|null>|string|null;
-export type LocaleResolver = (request: NextRequest) => Promise<string|null>|string|null;
+export type UserIdResolver = (request: NextRequest) => Promise<string | null> | string | null;
+export type LocaleResolver = (request: NextRequest) => Promise<string | null> | string | null;
 
 type ProxyMatcher = string | string[] | RouterCriteria[];
 
@@ -148,7 +145,7 @@ async function getUserToken(
     userIdResolver?: UserIdResolver,
 ): Promise<Token> {
     const userCookie = request.cookies.get(cookieName);
-    let token: Token|null = null;
+    let token: Token | null = null;
 
     if (userCookie !== undefined) {
         try {
@@ -247,6 +244,7 @@ async function handleRequest(
         });
     }
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Method is static and cannot be ignored.
     const nextResponse = NextResponse.next;
 
     NextResponse.next = ({request: modifiedRequest = {}, ...init} = {}): NextResponse => {
