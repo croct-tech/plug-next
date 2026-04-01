@@ -11,7 +11,7 @@ import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from
 import type {RouterCriteria} from '@/matcher';
 import {createMatcher} from '@/matcher';
 
-const matcherRegex = /\/((?!api|_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
+const matcherRegex = /\/((?!_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
 const isPageRoute = createMatcher([{source: matcherRegex.source}]);
 
 const CLIENT_ID_PATTERN = /^(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|[a-f0-9]{32})$/;
@@ -244,6 +244,7 @@ async function handleRequest(
         });
     }
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Method is static and cannot be ignored.
     const nextResponse = NextResponse.next;
 
     NextResponse.next = ({request: modifiedRequest = {}, ...init} = {}): NextResponse => {
