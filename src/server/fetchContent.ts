@@ -66,7 +66,7 @@ export async function fetchContent<
 
     try {
         context = await resolveRequestContext(route);
-    } catch (error) {
+    } catch (error: unknown) {
         if (isDynamicServerError(error) || route !== undefined) {
             return Promise.reject(error);
         }

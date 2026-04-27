@@ -1,4 +1,4 @@
-name: Update release notes
+name: Sync release notes
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - '**'
 
 jobs:
-  release-draft:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - uses: release-drafter/release-drafter@v6
