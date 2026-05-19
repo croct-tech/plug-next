@@ -155,6 +155,25 @@ describe('getRequestContext', () => {
         expect(context.userToken).toEqual(newToken.toString());
     });
 
+    it('should use the header token when it is newer than the cookie token', () => {
+        const oldToken = Token.issue(appId, null, 0);
+        const newToken = Token.issue(appId, null, 1);
+
+        const userCookie = getUserTokenCookieOptions();
+        const cookies = createCookieJar({
+            [userCookie.name]: oldToken.toString(),
+        });
+
+        const headers = new Headers();
+
+        headers.set(Header.CLIENT_ID, '00000000-0000-0000-0000-000000000000');
+        headers.set(Header.USER_TOKEN, newToken.toString());
+
+        const context = getRequestContext(headers, cookies);
+
+        expect(context.userToken).toEqual(newToken.toString());
+    });
+
     it('should return the preferred locale from the environment', () => {
         process.env.NEXT_PUBLIC_CROCT_DEFAULT_PREFERRED_LOCALE = 'en';
 
