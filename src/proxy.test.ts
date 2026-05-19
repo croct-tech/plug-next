@@ -747,6 +747,8 @@ describe('proxy', () => {
         currentUserId?: string | null,
         requestToken?: {
             apiKey?: string,
+            appId?: string,
+            tokenId?: string,
             userId: string | null,
             expiration: number,
             issueTime: number,
@@ -754,6 +756,10 @@ describe('proxy', () => {
         },
         expectTokenChange: boolean,
         expectSignedToken: boolean,
+        expectTokenId?: 'preserved' | 'fresh',
+        expectSubject?: string | null,
+        expectIssueTime?: number,
+        expectExpirationTime?: number,
     };
 
     it.each<[string, UserTokenChangeScenario]>(
@@ -900,7 +906,43 @@ describe('proxy', () => {
                 expectTokenChange: true,
                 expectSignedToken: false,
             },
-            'a new authenticated token if the API key changes': {
+            'a re-signed token with preserved jti, sub and refreshed iat if only the API key changes': {
+                now: 1714881454,
+                authentication: true,
+                currentApiKey: '00000000-0000-0000-0000-000000000002',
+                currentUserId: '00000000-0000-0000-0000-000000000001',
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454 - 60,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    apiKey: '00000000-0000-0000-0000-000000000001',
+                    tokenId: '11111111-1111-1111-1111-111111111111',
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+                expectTokenId: 'preserved',
+                expectIssueTime: 1714881454,
+                expectExpirationTime: 1714881454 + 86400,
+            },
+            'a re-signed token with preserved sub if the API key changes and no resolver is provided': {
+                now: 1714881454,
+                authentication: true,
+                currentApiKey: '00000000-0000-0000-0000-000000000002',
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    apiKey: '00000000-0000-0000-0000-000000000001',
+                    tokenId: '22222222-2222-2222-2222-222222222222',
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+                expectTokenId: 'preserved',
+                expectSubject: '00000000-0000-0000-0000-000000000001',
+            },
+            'a fresh token if both the API key and the application ID change': {
                 now: 1714881454,
                 authentication: true,
                 currentApiKey: '00000000-0000-0000-0000-000000000002',
@@ -910,10 +952,30 @@ describe('proxy', () => {
                     issueTime: 1714881454,
                     userId: '00000000-0000-0000-0000-000000000001',
                     apiKey: '00000000-0000-0000-0000-000000000001',
+                    appId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+                    tokenId: '33333333-3333-3333-3333-333333333333',
                     signed: true,
                 },
                 expectTokenChange: true,
                 expectSignedToken: true,
+                expectTokenId: 'fresh',
+            },
+            'a fresh anonymous token if the application ID changes and no resolver is provided': {
+                now: 1714881454,
+                authentication: true,
+                requestToken: {
+                    expiration: 1714881454 + 1000,
+                    issueTime: 1714881454,
+                    userId: '00000000-0000-0000-0000-000000000001',
+                    apiKey: '00000000-0000-0000-0000-000000000001',
+                    appId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+                    tokenId: '44444444-4444-4444-4444-444444444444',
+                    signed: true,
+                },
+                expectTokenChange: true,
+                expectSignedToken: true,
+                expectTokenId: 'fresh',
+                expectSubject: null,
             },
             'a new authenticated token if the token is unauthenticated': {
                 now: 1714881454,
@@ -1072,7 +1134,7 @@ describe('proxy', () => {
             ? Token.of(
                 {
                     typ: 'JWT',
-                    appId: getAppId(),
+                    appId: requestToken.appId ?? getAppId(),
                     alg: 'none',
                 },
                 {
@@ -1086,7 +1148,7 @@ describe('proxy', () => {
             : null;
 
         const oldUserToken = oldUnsignedToken !== null && requestToken?.signed === true
-            ? await oldUnsignedToken.withTokenId(crypto.randomUUID())
+            ? await oldUnsignedToken.withTokenId(requestToken.tokenId ?? crypto.randomUUID())
                 .signedWith(oldApiKey)
             : oldUnsignedToken;
 
@@ -1110,12 +1172,36 @@ describe('proxy', () => {
 
         const parsedToken = Token.parse(newUserToken!);
 
+        const freshJtiMatcher = expect.not.stringMatching(requestToken?.tokenId ?? '\0');
+        const tokenIdMatchers: Record<'preserved' | 'fresh', unknown> = {
+            preserved: requestToken?.tokenId,
+            fresh: freshJtiMatcher,
+        };
+        const expectedJti = scenario.expectTokenId !== undefined ? tokenIdMatchers[scenario.expectTokenId] : undefined;
+
+        const expectedPayload: Record<string, unknown> = {};
+
+        if (expectedJti !== undefined) {
+            expectedPayload.jti = expectedJti;
+        }
+
+        if (scenario.expectIssueTime !== undefined) {
+            expectedPayload.iat = scenario.expectIssueTime;
+        }
+
+        if (scenario.expectExpirationTime !== undefined) {
+            expectedPayload.exp = scenario.expectExpirationTime;
+        }
+
+        const fallbackSubject = scenario.currentUserId !== undefined
+            ? scenario.currentUserId
+            : requestToken?.userId ?? null;
+
+        const expectedSubject = scenario.expectSubject !== undefined ? scenario.expectSubject : fallbackSubject;
+
         expect(parsedToken.isSigned()).toBe(scenario.expectSignedToken);
-        expect(parsedToken.getSubject()).toBe(
-            scenario.currentUserId !== undefined
-                ? scenario.currentUserId
-                : requestToken?.userId ?? null,
-        );
+        expect(parsedToken.getSubject()).toBe(expectedSubject);
+        expect(parsedToken.getPayload()).toEqual(expect.objectContaining(expectedPayload));
 
         expect(parseSetCookies(response.headers.getSetCookie())).toIncludeAllMembers([{
             name: cookieName,
@@ -1125,6 +1211,42 @@ describe('proxy', () => {
             sameSite: 'None',
             value: newUserToken,
         }]);
+    });
+
+    it('should re-sign a same-app token without jti when only the API key changes', async () => {
+        const privateKey = 'ES256;MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg3TbbvRM7DNwxY3XGWDmlSRPSfZ9b+ch9TO3'
+            + 'jQ68Zyj+hRANCAASmJj/EiEhUaLAWnbXMTb/85WADkuFgoELGZ5ByV7YPlbb2wY6oLjzGkpF6z8iDrvJ4kV6EhaJ4n0HwSQckVLNE';
+        const oldApiKey = ApiKey.of('00000000-0000-0000-0000-000000000001', privateKey);
+        const currentApiKey = ApiKey.of('00000000-0000-0000-0000-000000000002', privateKey);
+
+        jest.useFakeTimers({now: 1714881454 * 1000});
+
+        setEnvVars({
+            appId: '00000000-0000-0000-0000-000000000001',
+            apiKey: currentApiKey.export(),
+            enableTokenAuthentication: true,
+        });
+
+        const oldUnsignedToken = Token.of(
+            {typ: 'JWT', appId: getAppId(), alg: 'none'},
+            {iat: 1714881454, exp: 1714881454 + 1000, iss: 'test', aud: 'test', sub: 'user-1'},
+        );
+        const oldUserToken = await oldUnsignedToken.signedWith(oldApiKey);
+
+        expect(oldUserToken.getTokenId()).toBeNull();
+
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        request.cookies.set('ct.user_token', oldUserToken.toString());
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        await expect(withCroct()(request, fetchEvent)).resolves.toBe(response);
+
+        const newToken = Token.parse(request.headers.get(Header.USER_TOKEN)!);
+
+        expect(newToken.getSubject()).toBe('user-1');
+        expect(newToken.getTokenId()).toMatch(UUID_PATTERN);
     });
 
     it('should use the locale resolver to determine the preferred locale', async () => {
