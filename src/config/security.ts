@@ -73,12 +73,12 @@ export function getTokenDuration(): number {
 /**
  * @internal
  */
-export function issueToken(userId: string | null = null): Promise<Token> {
+export function issueToken(userId: string | null = null, tokenId?: string): Promise<Token> {
     const token = Token.issue(getAppId(), userId)
         .withDuration(getTokenDuration());
 
     if (isUserTokenAuthenticationEnabled()) {
-        return token.withTokenId(crypto.randomUUID())
+        return token.withTokenId(tokenId ?? crypto.randomUUID())
             .signedWith(getAuthenticationKey());
     }
 

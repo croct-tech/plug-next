@@ -222,6 +222,58 @@ describe('security', () => {
             await expect(verification).resolves.toBeTrue();
         });
 
+        it('should preserve a given token ID when issuing a signed token', async () => {
+            jest.useFakeTimers({now: Date.now()});
+
+            const keyPair = await crypto.subtle.generateKey(
+                {
+                    name: 'ECDSA',
+                    namedCurve: 'P-256',
+                },
+                true,
+                ['sign', 'verify'],
+            );
+
+            const localPrivateKey = Buffer.from(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey))
+                .toString('base64');
+
+            const apiKey = MockApiKey.of('00000000-0000-0000-0000-000000000001', `ES256;${localPrivateKey}`);
+
+            process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+            process.env.CROCT_API_KEY = apiKey.export();
+            process.env.CROCT_TOKEN_DURATION = '3600';
+            process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = 'false';
+
+            const tokenId = '11111111-2222-3333-4444-555555555555';
+
+            const token = await issueToken('user-id', tokenId);
+
+            expect(token.getTokenId()).toBe(tokenId);
+            expect(token.getSubject()).toBe('user-id');
+            expect(token.getPayload()).toEqual({
+                iat: Math.floor(Date.now() / 1000),
+                exp: Math.floor(Date.now() / 1000) + 3600,
+                iss: 'croct.io',
+                aud: 'croct.io',
+                sub: 'user-id',
+                jti: tokenId,
+            });
+        });
+
+        it('should ignore the token ID when authentication is disabled', async () => {
+            jest.useFakeTimers({now: Date.now()});
+
+            process.env.NEXT_PUBLIC_CROCT_APP_ID = '00000000-0000-0000-0000-000000000000';
+            process.env.CROCT_API_KEY = `${identifier}:${privateKey}`;
+            process.env.CROCT_DISABLE_USER_TOKEN_AUTHENTICATION = 'true';
+            process.env.CROCT_TOKEN_DURATION = '3600';
+
+            const token = await issueToken('user-id', '11111111-2222-3333-4444-555555555555');
+
+            expect(token.getTokenId()).toBeNull();
+            expect(token.getSignature()).toBe('');
+        });
+
         it.each<[string, string | undefined]>([
             ['an anonymous user', undefined],
             ['an identified user', 'user-id'],

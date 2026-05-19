@@ -8,6 +8,7 @@ import {Header, QueryParameter} from '@/config/http';
 import type {CookieOptions} from '@/config/cookie';
 import {getClientIdCookieOptions, getPreviewCookieOptions, getUserTokenCookieOptions} from '@/config/cookie';
 import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from './config/security';
+import {getAppId} from '@/config/appId';
 import type {RouterCriteria} from '@/matcher';
 import {createMatcher} from '@/matcher';
 
@@ -162,9 +163,21 @@ async function getUserToken(
         || (isUserTokenAuthenticationEnabled() && !token.isSigned())
         || !token.isValidNow()
         || (userId !== undefined && (userId === null ? !token.isAnonymous() : !token.isSubject(userId)))
-        || (token.isSigned() && !await token.matchesKeyId(getAuthenticationKey()))
     ) {
         return issueToken(userId);
+    }
+
+    const tokenAppId = token.getApplicationId();
+
+    if (tokenAppId !== null && tokenAppId !== getAppId()) {
+        // Foreign-app cookie pollution: fresh everything.
+        return issueToken(userId);
+    }
+
+    if (token.isSigned() && !await token.matchesKeyId(getAuthenticationKey())) {
+        // Same app, signed using a different API key. Re-sign with the local key but inherit
+        // jti and sub so the session continuity is preserved
+        return issueToken(userId ?? token.getSubject(), token.getTokenId() ?? undefined);
     }
 
     return token;
