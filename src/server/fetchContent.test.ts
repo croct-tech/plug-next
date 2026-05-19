@@ -153,6 +153,23 @@ describe('fetchContent', () => {
                 logger: expect.any(FilteredLogger),
             },
         },
+        'with user token': {
+            request: {
+                clientId: request.clientId,
+                userToken: 'ct.user-token',
+            },
+            options: {},
+            resolvedOptions: {
+                apiKey: ApiKey.from(apiKey),
+                clientId: request.clientId,
+                clientIp: '127.0.0.1',
+                userToken: 'ct.user-token',
+                extra: {
+                    cache: 'no-store',
+                },
+                logger: expect.any(FilteredLogger),
+            },
+        },
         'with overridden options': {
             request: {
                 clientId: request.clientId,

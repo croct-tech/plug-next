@@ -364,6 +364,40 @@ describe('getCookies', () => {
         expect(response.setHeader).toHaveBeenCalledWith('Set-Cookie', ['test=value; Domain=example.com']);
     });
 
+    it('should normalize a non-array Set-Cookie response header value', async () => {
+        mockCookies.mockImplementation(() => {
+            throw new Error('next/headers requires app router');
+        });
+
+        const request = {
+            headers: new Headers(),
+            cookies: {} as NextRequest['cookies'],
+        } satisfies PartialRequest;
+
+        const response: PartialResponse = {
+            getHeader: (name: string): string | undefined => {
+                if (name === 'Set-Cookie') {
+                    return 'foo=bar';
+                }
+
+                return undefined;
+            },
+            setHeader: jest.fn(),
+        } satisfies PartialResponse;
+
+        const cookies = await getCookies({
+            req: request,
+            res: response,
+        });
+
+        cookies.set('test', 'value', {domain: 'example.com'});
+
+        expect(response.setHeader).toHaveBeenCalledWith(
+            'Set-Cookie',
+            ['foo=bar', 'test=value; Domain=example.com'],
+        );
+    });
+
     it('should preserve existing cookies when setting a new cookie', async () => {
         mockCookies.mockImplementation(() => {
             throw new Error('next/headers requires app router');

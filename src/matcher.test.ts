@@ -21,16 +21,18 @@ describe('createMatcher', () => {
             nextUrl.searchParams.set(name, value);
         }
 
-        if (options.locale !== undefined) {
-            if (nextUrl.pathname.startsWith(`/${options.locale}`)) {
-                nextUrl.pathname = nextUrl.pathname.slice(options.locale.length + 2);
-            }
-
-            Object.defineProperty(nextUrl, 'locale', {
-                value: options.locale,
-                writable: false,
-            });
+        if (
+            options.locale !== undefined
+            && options.locale !== ''
+            && nextUrl.pathname.startsWith(`/${options.locale}`)
+        ) {
+            nextUrl.pathname = nextUrl.pathname.slice(options.locale.length + 2);
         }
+
+        Object.defineProperty(nextUrl, 'locale', {
+            value: options.locale ?? '',
+            writable: false,
+        });
 
         return {
             url: realUrl.toString(),
@@ -97,6 +99,19 @@ describe('createMatcher', () => {
             criteria: [
                 {
                     source: '/en/sub',
+                    locale: false,
+                },
+            ],
+        },
+        {
+            name: 'not prepend a locale prefix when the request has no locale and locale is false',
+            expected: true,
+            request: {
+                path: '/sub',
+            },
+            criteria: [
+                {
+                    source: '/sub',
                     locale: false,
                 },
             ],
@@ -634,6 +649,32 @@ describe('getRequestInfo', () => {
                 pathname: '/app/pt$',
                 basePath: '/app',
                 routePath: '/',
+            },
+        },
+        // Workaround regex does not match — outer condition fires but inner pattern fails.
+        // Ensures the `match !== null` branch's false case is covered.
+        {
+            url: 'https://example.com/pt/foo',
+            locale: 'pt',
+            pathname: '/foo',
+            basePath: '',
+            expected: {
+                pathname: '/pt/foo',
+                basePath: '',
+                routePath: '/foo',
+            },
+        },
+        // Workaround regex matches with a non-empty trailing segment — exercises the
+        // `match[3] === '' ? '/' : match[3]` ternary's truthy/falsy split.
+        {
+            url: 'https://example.com/pt/app/pt/sub',
+            locale: 'pt',
+            pathname: '/app/pt/sub',
+            basePath: '',
+            expected: {
+                pathname: '/app/pt/sub',
+                basePath: '/app',
+                routePath: '/sub',
             },
         },
     ])('extracts correct request information', ({url, locale, basePath, pathname, expected}) => {

@@ -93,7 +93,7 @@ export async function fetchContent<
                 context: {
                     page: {
                         url: context.uri,
-                        ...(context.referrer !== null ? {referrer: context.referrer} : {}),
+                        ...(context.referrer !== undefined ? {referrer: context.referrer} : {}),
                     },
                 },
             }
