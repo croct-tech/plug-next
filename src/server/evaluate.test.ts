@@ -144,6 +144,25 @@ describe('evaluation', () => {
                     logger: expect.any(FilteredLogger),
                 },
             },
+            'with preview and user tokens': {
+                request: {
+                    clientId: request.clientId,
+                    previewToken: 'ct.preview',
+                    userToken: 'ct.user',
+                },
+                options: {},
+                resolvedOptions: {
+                    apiKey: ApiKey.from(apiKey),
+                    clientId: request.clientId,
+                    clientIp: '127.0.0.1',
+                    previewToken: 'ct.preview',
+                    userToken: 'ct.user',
+                    extra: {
+                        cache: 'no-store',
+                    },
+                    logger: expect.any(FilteredLogger),
+                },
+            },
             'with override options': {
                 request: {
                     clientId: request.clientId,

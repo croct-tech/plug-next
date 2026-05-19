@@ -1266,6 +1266,24 @@ describe('proxy', () => {
         expect(request.headers.get(Header.PREFERRED_LOCALE)).toBe(locale);
     });
 
+    it('should fall back to the request locale when the locale resolver returns null', async () => {
+        const url = new URL('https://example.com/');
+
+        Object.defineProperty(url, 'locale', {value: 'pt-br', writable: false});
+
+        const request = createRequestMock(url);
+        const response = createResponseMock();
+
+        jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const localeResolver = jest.fn().mockResolvedValue(null);
+
+        await expect(withCroct({localeResolver: localeResolver})(request, fetchEvent)).resolves.toBe(response);
+
+        expect(localeResolver).toHaveBeenCalledWith(request);
+        expect(request.headers.get(Header.PREFERRED_LOCALE)).toBe('pt-br');
+    });
+
     it('should call the next proxy if the matcher matches regardless of the request URL', async () => {
         const request = createRequestMock(new URL('https://example.com/api/foo'));
         const response = createResponseMock();
@@ -1302,6 +1320,47 @@ describe('proxy', () => {
         expect(nextProxy).not.toHaveBeenCalled();
     });
 
+    it('should accept a single string matcher', async () => {
+        const request = createRequestMock(new URL('https://example.com/api/foo'));
+        const response = createResponseMock();
+
+        const nextProxy = jest.fn().mockResolvedValue(response);
+
+        const result = withCroct({matcher: '/api/:path*', next: nextProxy})(request, fetchEvent);
+
+        await expect(result).resolves.toBe(response);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
+    });
+
+    it('should skip processing for non-page routes when the matcher matches', async () => {
+        const request = createRequestMock(new URL('https://example.com/_next/static/chunks/foo.js'));
+        const expected = createResponseMock();
+
+        const nextProxy = jest.fn().mockResolvedValue(expected);
+
+        const proxyMatcher: RouterCriteria[] = [{
+            source: '/:path*',
+        }];
+
+        const result = await withCroct({matcher: proxyMatcher, next: nextProxy})(request, fetchEvent);
+
+        expect(result).toBe(expected);
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
+        expect(NextResponse.next).not.toHaveBeenCalled();
+    });
+
+    it('should skip processing for non-page routes when the matcher excludes the route', async () => {
+        const request = createRequestMock(new URL('https://example.com/_next/static/chunks/foo.js'));
+
+        const nextProxy = jest.fn();
+
+        const result = await withCroct({matcher: [{source: '/api/foo'}], next: nextProxy})(request, fetchEvent);
+
+        expect(result).toBeUndefined();
+        expect(nextProxy).not.toHaveBeenCalled();
+        expect(NextResponse.next).not.toHaveBeenCalled();
+    });
+
     it('should always override the headers', async () => {
         const request = createRequestMock();
         const response = createResponseMock();
@@ -1333,6 +1392,24 @@ describe('proxy', () => {
         expect(headers?.get('x-custom-header')).toBe('custom-value');
 
         expect(nextResponse).toBe(NextResponse.next);
+    });
+
+    it('should inject headers when the next proxy calls NextResponse.next with no arguments', async () => {
+        const request = createRequestMock();
+        const response = createResponseMock();
+
+        const spy = jest.spyOn(NextResponse, 'next').mockReturnValue(response);
+
+        const nextProxy = jest.fn(() => NextResponse.next());
+
+        await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
+
+        expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
+        expect(NextResponse.next).toHaveBeenCalledTimes(1);
+
+        const headers = spy.mock.calls[0][0]?.request?.headers;
+
+        expect(headers?.get(Header.CLIENT_ID)).not.toBeNull();
     });
 
     it('should set the headers if the proxy does not return a response', async () => {
