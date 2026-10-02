@@ -3,7 +3,7 @@ import {NextRequest, NextResponse} from 'next/server';
 import type {NextFetchEvent, NextMiddleware} from 'next/server';
 import {withCroct} from '@/proxy';
 
-function gate(): {promise: Promise<void>, open: () => void} {
+function createGate(): {promise: Promise<void>, open: () => void} {
     let open = (): void => {};
     const promise = new Promise<void>(resolve => {
         open = resolve;
@@ -12,13 +12,13 @@ function gate(): {promise: Promise<void>, open: () => void} {
     return {promise: promise, open: open};
 }
 
-function previewToken(id: string): string {
+function createPreviewToken(id: string): string {
     const payload = Buffer.from(JSON.stringify({exp: Math.floor(Date.now() / 1000) + 3600, id: id}));
 
     return `header.${payload.toString('base64url')}.signature`;
 }
 
-function request(id: string, token?: string): NextRequest {
+function createRequest(id: string, token?: string): NextRequest {
     return new NextRequest(`https://example.com/${id}`, {
         headers: {
             'x-test-visitor': id,
@@ -27,11 +27,19 @@ function request(id: string, token?: string): NextRequest {
     });
 }
 
-function forwarded(response: Response | undefined | null | void, name: string): string | null {
-    return response?.headers.get(`x-middleware-request-${name}`) ?? null;
+function getResponse(response: Response | undefined | null | void): Response {
+    if (!(response instanceof Response)) {
+        throw new Error('Expected a proxy response.');
+    }
+
+    return response;
 }
 
-describe('Concurrent proxy requests', () => {
+function getForwardedHeader(response: Response | undefined | null | void, name: string): string | null {
+    return getResponse(response).headers.get(`x-middleware-request-${name}`);
+}
+
+describe('proxy concurrency', () => {
     const environment = {...process.env};
     const originalNext = NextResponse.next;
     const globalStorage = Object.getOwnPropertyDescriptor(globalThis, 'AsyncLocalStorage');
@@ -58,9 +66,9 @@ describe('Concurrent proxy requests', () => {
     it.each(['preview-first', 'visitor-first'])(
         'should isolate preview and visitor headers when finishing %s',
         async order => {
-            const entered = [gate(), gate()];
-            const release = [gate(), gate()];
-            const token = previewToken('editor');
+            const entered = [createGate(), createGate()];
+            const release = [createGate(), createGate()];
+            const token = createPreviewToken('editor');
             const handler = withCroct(async incoming => {
                 const index = incoming.nextUrl.pathname === '/editor' ? 0 : 1;
 
@@ -70,11 +78,11 @@ describe('Concurrent proxy requests', () => {
                 return NextResponse.next();
             });
 
-            const editor = Promise.resolve(handler(request('editor', token), event));
+            const editor = Promise.resolve(handler(createRequest('editor', token), event));
 
             await entered[0].promise;
 
-            const visitor = Promise.resolve(handler(request('visitor'), event));
+            const visitor = Promise.resolve(handler(createRequest('visitor'), event));
 
             await entered[1].promise;
 
@@ -86,28 +94,28 @@ describe('Concurrent proxy requests', () => {
             release[1 - first].open();
 
             const [editorResponse, visitorResponse] = await Promise.all(responses);
-            const subsequent = await withCroct(() => NextResponse.next())(request('subsequent'), event);
+            const subsequent = await withCroct(() => NextResponse.next())(createRequest('subsequent'), event);
 
-            expect(forwarded(editorResponse, 'x-preview-token')).toBe(token);
-            expect(forwarded(editorResponse, 'x-test-visitor')).toBe('editor');
-            expect(forwarded(visitorResponse, 'x-preview-token')).toBeNull();
-            expect(forwarded(visitorResponse, 'cookie')).toBeNull();
-            expect(forwarded(visitorResponse, 'x-test-visitor')).toBe('visitor');
-            expect(forwarded(subsequent, 'x-preview-token')).toBeNull();
-            expect(forwarded(subsequent, 'x-test-visitor')).toBe('subsequent');
+            expect(getForwardedHeader(editorResponse, 'x-preview-token')).toBe(token);
+            expect(getForwardedHeader(editorResponse, 'x-test-visitor')).toBe('editor');
+            expect(getForwardedHeader(visitorResponse, 'x-preview-token')).toBeNull();
+            expect(getForwardedHeader(visitorResponse, 'cookie')).toBeNull();
+            expect(getForwardedHeader(visitorResponse, 'x-test-visitor')).toBe('visitor');
+            expect(getForwardedHeader(subsequent, 'x-preview-token')).toBeNull();
+            expect(getForwardedHeader(subsequent, 'x-test-visitor')).toBe('subsequent');
         },
     );
 
     it('should not affect calls outside Croct while a preview request is pending', async () => {
-        const entered = gate();
-        const release = gate();
+        const entered = createGate();
+        const release = createGate();
         const handler = withCroct(async () => {
             entered.open();
             await release.promise;
 
             return NextResponse.next();
         });
-        const pending = handler(request('editor', previewToken('editor')), event);
+        const pending = handler(createRequest('editor', createPreviewToken('editor')), event);
 
         await entered.promise;
 
@@ -116,7 +124,7 @@ describe('Concurrent proxy requests', () => {
         release.open();
         await pending;
 
-        expect(forwarded(response, 'x-preview-token')).toBeNull();
+        expect(getForwardedHeader(response, 'x-preview-token')).toBeNull();
         expect(response.headers.get('x-middleware-override-headers')).toBeNull();
     });
 
@@ -124,37 +132,37 @@ describe('Concurrent proxy requests', () => {
         withCroct(),
         withCroct({matcher: '/other', next: () => NextResponse.next()}),
     ])('should isolate nested requests without a matching handler', async nested => {
-        const handler = withCroct(async () => nested(request('visitor'), event));
-        const response = await handler(request('editor', previewToken('editor')), event);
+        const handler = withCroct(async () => nested(createRequest('visitor'), event));
+        const response = await handler(createRequest('editor', createPreviewToken('editor')), event);
 
-        expect(forwarded(response, 'x-preview-token')).toBeNull();
-        expect(forwarded(response, 'x-test-visitor')).toBe('visitor');
+        expect(getForwardedHeader(response, 'x-preview-token')).toBeNull();
+        expect(getForwardedHeader(response, 'x-test-visitor')).toBe('visitor');
     });
 
     it('should isolate excluded routes nested inside a preview handler', async () => {
         const nested = withCroct(() => NextResponse.next());
         const handler = withCroct(async () => nested(new NextRequest('https://example.com/robots.txt'), event));
-        const response = await handler(request('editor', previewToken('editor')), event);
+        const response = getResponse(await handler(createRequest('editor', createPreviewToken('editor')), event));
 
-        expect(forwarded(response, 'x-preview-token')).toBeNull();
-        expect(response?.headers.get('x-middleware-override-headers')).toBeNull();
+        expect(getForwardedHeader(response, 'x-preview-token')).toBeNull();
+        expect(response.headers.get('x-middleware-override-headers')).toBeNull();
     });
 
     it('should isolate simultaneous previews and the no-response fallback', async () => {
-        const entered = [gate(), gate()];
-        const release = [gate(), gate()];
-        const tokens = [previewToken('first'), previewToken('second')];
+        const entered = [createGate(), createGate()];
+        const release = [createGate(), createGate()];
+        const tokens = [createPreviewToken('first'), createPreviewToken('second')];
         const handler = withCroct(async incoming => {
             const index = incoming.nextUrl.pathname === '/first' ? 0 : 1;
 
             entered[index].open();
             await release[index].promise;
         });
-        const first = handler(request('first', tokens[0]), event);
+        const first = handler(createRequest('first', tokens[0]), event);
 
         await entered[0].promise;
 
-        const second = handler(request('second', tokens[1]), event);
+        const second = handler(createRequest('second', tokens[1]), event);
 
         await entered[1].promise;
         release[0].open();
@@ -164,33 +172,34 @@ describe('Concurrent proxy requests', () => {
         release[1].open();
 
         const secondResponse = await second;
+        const firstClientId = getForwardedHeader(firstResponse, 'x-client-id');
 
-        expect(forwarded(firstResponse, 'x-preview-token')).toBe(tokens[0]);
-        expect(forwarded(secondResponse, 'x-preview-token')).toBe(tokens[1]);
-        expect(forwarded(firstResponse, 'x-client-id')).not.toBe(forwarded(secondResponse, 'x-client-id'));
+        expect(getForwardedHeader(firstResponse, 'x-preview-token')).toBe(tokens[0]);
+        expect(getForwardedHeader(secondResponse, 'x-preview-token')).toBe(tokens[1]);
+        expect(firstClientId).not.toBe(getForwardedHeader(secondResponse, 'x-client-id'));
     });
 
     it('should not retain a rejecting request in another request or subsequent calls', async () => {
-        const entered = gate();
-        const release = gate();
+        const entered = createGate();
+        const release = createGate();
         const error = new Error('Handler failed');
         const failing = withCroct(async () => {
             entered.open();
             await release.promise;
             throw error;
         });
-        const failure = Promise.resolve(failing(request('editor', previewToken('editor')), event))
+        const failure = Promise.resolve(failing(createRequest('editor', createPreviewToken('editor')), event))
             .catch((reason: unknown) => reason);
 
         await entered.promise;
 
-        const response = await withCroct(() => NextResponse.next())(request('visitor'), event);
+        const response = await withCroct(() => NextResponse.next())(createRequest('visitor'), event);
 
         release.open();
         await expect(failure).resolves.toBe(error);
 
-        expect(forwarded(response, 'x-preview-token')).toBeNull();
-        expect(forwarded(NextResponse.next(), 'x-preview-token')).toBeNull();
+        expect(getForwardedHeader(response, 'x-preview-token')).toBeNull();
+        expect(getForwardedHeader(NextResponse.next(), 'x-preview-token')).toBeNull();
     });
 
     it.each([
@@ -228,16 +237,16 @@ describe('Concurrent proxy requests', () => {
 
         response.headers.set('x-custom-response', 'preserved');
         const handler = withCroct(() => response);
-        const result = await handler(request('visitor'), event);
+        const result = getResponse(await handler(createRequest('visitor'), event));
 
         expect(result).toBe(response);
-        expect(result?.headers.get('x-custom-response')).toBe('preserved');
-        expect(result?.headers.get('set-cookie')).toContain('ct.client_id=');
+        expect(result.headers.get('x-custom-response')).toBe('preserved');
+        expect(result.headers.get('set-cookie')).toContain('ct.client_id=');
 
-        expect(result?.status).toBe(scenario.status);
-        expect(result?.headers.get('location')).toBe(scenario.location);
-        expect(result?.headers.get('x-middleware-rewrite')).toBe(scenario.rewrite);
-        expect(forwarded(result, 'x-explicit')).toBe(scenario.explicit);
-        await expect(result?.text()).resolves.toBe(scenario.body);
+        expect(result.status).toBe(scenario.status);
+        expect(result.headers.get('location')).toBe(scenario.location);
+        expect(result.headers.get('x-middleware-rewrite')).toBe(scenario.rewrite);
+        expect(getForwardedHeader(result, 'x-explicit')).toBe(scenario.explicit);
+        await expect(result.text()).resolves.toBe(scenario.body);
     });
 });

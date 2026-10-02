@@ -11,7 +11,6 @@ import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from
 import {getAppId} from '@/config/appId';
 import type {RouterCriteria} from '@/matcher';
 import {createMatcher} from '@/matcher';
-import type {ProxyScope} from '@/proxyContext';
 import {runWithProxyContext} from '@/proxyContext';
 
 const matcherRegex = /\/((?!_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
@@ -64,7 +63,7 @@ export function withCroct(...args: CroctProxyParams): NextProxy {
         ),
     ));
 
-    return (request, event) => runWithProxyContext(async scope => {
+    return (request, event) => runWithProxyContext(null, async () => {
         const handler = matchesProxy(request) ? next : undefined;
 
         if (!isPageRoute(request)) {
@@ -109,7 +108,7 @@ export function withCroct(...args: CroctProxyParams): NextProxy {
             headers.set(Header.PREVIEW_TOKEN, previewToken);
         }
 
-        const response = await handleRequest(handler, headers, request, event, scope);
+        const response = await handleRequest(handler, headers, request, event);
 
         if (previewToken === 'exit') {
             unsetCookie(response, previewCookie.name);
@@ -246,7 +245,6 @@ async function handleRequest(
     headers: Headers,
     request: NextRequest,
     event: NextFetchEvent,
-    scope: ProxyScope,
 ): Promise<Response> {
     headers.forEach((value, name) => {
         request.headers.set(name, value);
@@ -260,17 +258,14 @@ async function handleRequest(
         });
     }
 
-    // eslint-disable-next-line no-param-reassign -- Activate only this invocation's scope while executing the handler.
-    scope.headers = request.headers;
-
-    try {
-        return await next(request, event) ?? NextResponse.next({
-            request: {
-                headers: new Headers(request.headers),
-            },
-        });
-    } finally {
-        // eslint-disable-next-line no-param-reassign -- Release headers even when the handler rejects.
-        scope.headers = null;
-    }
+    return runWithProxyContext(
+        request.headers,
+        async () => (
+            await next(request, event) ?? NextResponse.next({
+                request: {
+                    headers: new Headers(request.headers),
+                },
+            })
+        ),
+    );
 }
