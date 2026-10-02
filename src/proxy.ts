@@ -11,6 +11,8 @@ import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from
 import {getAppId} from '@/config/appId';
 import type {RouterCriteria} from '@/matcher';
 import {createMatcher} from '@/matcher';
+import type {ProxyScope} from '@/proxyContext';
+import {runWithProxyContext} from '@/proxyContext';
 
 const matcherRegex = /\/((?!_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
 const isPageRoute = createMatcher([{source: matcherRegex.source}]);
@@ -62,7 +64,7 @@ export function withCroct(...args: CroctProxyParams): NextProxy {
         ),
     ));
 
-    return async (request, event) => {
+    return (request, event) => runWithProxyContext(async scope => {
         const handler = matchesProxy(request) ? next : undefined;
 
         if (!isPageRoute(request)) {
@@ -107,7 +109,7 @@ export function withCroct(...args: CroctProxyParams): NextProxy {
             headers.set(Header.PREVIEW_TOKEN, previewToken);
         }
 
-        const response = await handleRequest(handler, headers, request, event);
+        const response = await handleRequest(handler, headers, request, event, scope);
 
         if (previewToken === 'exit') {
             unsetCookie(response, previewCookie.name);
@@ -119,7 +121,7 @@ export function withCroct(...args: CroctProxyParams): NextProxy {
         setCookie(response, clientId, clientIdCookie);
 
         return response;
-    };
+    });
 }
 
 function getCurrentUrl(request: NextRequest): string {
@@ -244,6 +246,7 @@ async function handleRequest(
     headers: Headers,
     request: NextRequest,
     event: NextFetchEvent,
+    scope: ProxyScope,
 ): Promise<Response> {
     headers.forEach((value, name) => {
         request.headers.set(name, value);
@@ -257,24 +260,8 @@ async function handleRequest(
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Method is static and cannot be ignored.
-    const nextResponse = NextResponse.next;
-
-    NextResponse.next = ({request: modifiedRequest = {}, ...init} = {}): NextResponse => {
-        const mergedHeaders = new Headers(request.headers);
-
-        modifiedRequest.headers?.forEach((value, name) => {
-            mergedHeaders.set(name, value);
-        });
-
-        return nextResponse({
-            ...init,
-            request: {
-                ...modifiedRequest,
-                headers: mergedHeaders,
-            },
-        });
-    };
+    // eslint-disable-next-line no-param-reassign -- Activate only this invocation's scope while executing the handler.
+    scope.headers = request.headers;
 
     try {
         return await next(request, event) ?? NextResponse.next({
@@ -283,6 +270,7 @@ async function handleRequest(
             },
         });
     } finally {
-        NextResponse.next = nextResponse;
+        // eslint-disable-next-line no-param-reassign -- Release headers even when the handler rejects.
+        scope.headers = null;
     }
 }

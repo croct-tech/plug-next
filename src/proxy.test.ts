@@ -1,3 +1,4 @@
+import {AsyncLocalStorage} from 'node:async_hooks';
 import type {NextRequest, NextFetchEvent, NextProxy} from 'next/server';
 import {NextResponse} from 'next/server';
 import type {Cookie} from 'set-cookie-parser';
@@ -37,6 +38,8 @@ jest.mock(
 
 describe('proxy', () => {
     const ENV_VARS = {...process.env};
+    const originalNext = NextResponse.next;
+    const globalStorage = Object.getOwnPropertyDescriptor(globalThis, 'AsyncLocalStorage');
 
     function createRequestMock(url = new URL('https://example.com/')): NextRequest {
         const cookies: Record<string, string> = {};
@@ -137,6 +140,10 @@ describe('proxy', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        NextResponse.next = originalNext;
+        Reflect.deleteProperty(NextResponse, Symbol.for('@croct/plug-next/proxy-context'));
+        // Match Next's bootstrap without changing the project's Jest environment.
+        Object.defineProperty(globalThis, 'AsyncLocalStorage', {value: AsyncLocalStorage, configurable: true});
 
         delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_DOMAIN;
         delete process.env.NEXT_PUBLIC_CROCT_CLIENT_ID_COOKIE_NAME;
@@ -155,6 +162,14 @@ describe('proxy', () => {
 
     afterEach(() => {
         Object.assign(process.env, ENV_VARS);
+        NextResponse.next = originalNext;
+        Reflect.deleteProperty(NextResponse, Symbol.for('@croct/plug-next/proxy-context'));
+
+        if (globalStorage === undefined) {
+            Reflect.deleteProperty(globalThis, 'AsyncLocalStorage');
+        } else {
+            Object.defineProperty(globalThis, 'AsyncLocalStorage', globalStorage);
+        }
 
         jest.useRealTimers();
     });
@@ -1346,7 +1361,7 @@ describe('proxy', () => {
 
         expect(result).toBe(expected);
         expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
-        expect(NextResponse.next).not.toHaveBeenCalled();
+        expect(originalNext).not.toHaveBeenCalled();
     });
 
     it('should skip processing for non-page routes when the matcher excludes the route', async () => {
@@ -1358,7 +1373,7 @@ describe('proxy', () => {
 
         expect(result).toBeUndefined();
         expect(nextProxy).not.toHaveBeenCalled();
-        expect(NextResponse.next).not.toHaveBeenCalled();
+        expect(originalNext).not.toHaveBeenCalled();
     });
 
     it('should always override the headers', async () => {
@@ -1366,8 +1381,6 @@ describe('proxy', () => {
         const response = createResponseMock();
 
         request.headers.set('x-custom-header', 'custom-value');
-
-        const nextResponse = NextResponse.next;
 
         const spy = jest.spyOn(NextResponse, 'next').mockReturnValue(response);
 
@@ -1383,7 +1396,7 @@ describe('proxy', () => {
 
         expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
 
-        expect(NextResponse.next).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledTimes(1);
 
         const headers = spy.mock.calls[0][0]?.request?.headers;
 
@@ -1391,7 +1404,9 @@ describe('proxy', () => {
 
         expect(headers?.get('x-custom-header')).toBe('custom-value');
 
-        expect(nextResponse).toBe(NextResponse.next);
+        NextResponse.next();
+
+        expect(spy).toHaveBeenLastCalledWith();
     });
 
     it('should inject headers when the next proxy calls NextResponse.next with no arguments', async () => {
@@ -1405,7 +1420,7 @@ describe('proxy', () => {
         await expect(withCroct(nextProxy)(request, fetchEvent)).resolves.toBe(response);
 
         expect(nextProxy).toHaveBeenCalledWith(request, fetchEvent);
-        expect(NextResponse.next).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledTimes(1);
 
         const headers = spy.mock.calls[0][0]?.request?.headers;
 
@@ -1431,10 +1446,10 @@ describe('proxy', () => {
         expect(headers?.get(Header.CLIENT_ID)).not.toBeNull();
     });
 
-    it('should restore the original next function even if the next proxy throws an error', async () => {
+    it('should stop injecting headers even if the next proxy throws an error', async () => {
         const request = createRequestMock();
 
-        const nextResponse = NextResponse.next;
+        const spy = jest.spyOn(NextResponse, 'next').mockReturnValue(createResponseMock());
 
         const error = new Error('Test');
 
@@ -1446,6 +1461,8 @@ describe('proxy', () => {
 
         await expect(withCroct(nextProxy)(request, fetchEvent)).rejects.toBe(error);
 
-        expect(nextResponse).toBe(NextResponse.next);
+        NextResponse.next();
+
+        expect(spy).toHaveBeenLastCalledWith();
     });
 });
