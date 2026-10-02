@@ -11,6 +11,7 @@ import {getAuthenticationKey, issueToken, isUserTokenAuthenticationEnabled} from
 import {getAppId} from '@/config/appId';
 import type {RouterCriteria} from '@/matcher';
 import {createMatcher} from '@/matcher';
+import {runWithProxyContext} from '@/proxyContext';
 
 const matcherRegex = /\/((?!_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
 const isPageRoute = createMatcher([{source: matcherRegex.source}]);
@@ -62,7 +63,7 @@ export function withCroct(...args: CroctProxyParams): NextProxy {
         ),
     ));
 
-    return async (request, event) => {
+    return (request, event) => runWithProxyContext(null, async () => {
         const handler = matchesProxy(request) ? next : undefined;
 
         if (!isPageRoute(request)) {
@@ -119,7 +120,7 @@ export function withCroct(...args: CroctProxyParams): NextProxy {
         setCookie(response, clientId, clientIdCookie);
 
         return response;
-    };
+    });
 }
 
 function getCurrentUrl(request: NextRequest): string {
@@ -257,32 +258,14 @@ async function handleRequest(
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Method is static and cannot be ignored.
-    const nextResponse = NextResponse.next;
-
-    NextResponse.next = ({request: modifiedRequest = {}, ...init} = {}): NextResponse => {
-        const mergedHeaders = new Headers(request.headers);
-
-        modifiedRequest.headers?.forEach((value, name) => {
-            mergedHeaders.set(name, value);
-        });
-
-        return nextResponse({
-            ...init,
-            request: {
-                ...modifiedRequest,
-                headers: mergedHeaders,
-            },
-        });
-    };
-
-    try {
-        return await next(request, event) ?? NextResponse.next({
-            request: {
-                headers: new Headers(request.headers),
-            },
-        });
-    } finally {
-        NextResponse.next = nextResponse;
-    }
+    return runWithProxyContext(
+        request.headers,
+        async () => (
+            await next(request, event) ?? NextResponse.next({
+                request: {
+                    headers: new Headers(request.headers),
+                },
+            })
+        ),
+    );
 }
