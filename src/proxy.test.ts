@@ -1465,4 +1465,21 @@ describe('proxy', () => {
 
         expect(spy).toHaveBeenLastCalledWith();
     });
+
+    it('should track responses when server timing is enabled', () => {
+        const storageKey = Symbol.for('@croct/plug-next/server-timing');
+
+        withCroct();
+
+        expect(Reflect.has(globalThis, storageKey)).toBe(false);
+
+        process.env.CROCT_SERVER_TIMING = 'true';
+
+        withCroct();
+
+        expect(Reflect.get(globalThis, storageKey)).toBeInstanceOf(AsyncLocalStorage);
+
+        delete process.env.CROCT_SERVER_TIMING;
+        Reflect.deleteProperty(globalThis, storageKey);
+    });
 });

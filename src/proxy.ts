@@ -12,6 +12,7 @@ import {getAppId} from '@/config/appId';
 import type {RouterCriteria} from '@/matcher';
 import {createMatcher} from '@/matcher';
 import {runWithProxyContext} from '@/proxyContext';
+import {trackResponse} from '@/serverTiming';
 
 const matcherRegex = /\/((?!_next\/static|_next\/image|favicon\.ico|sitemap\.xml|robots\.txt).*)/;
 const isPageRoute = createMatcher([{source: matcherRegex.source}]);
@@ -54,6 +55,9 @@ export function withCroct(...args: CroctProxyParams): NextProxy {
     }
 
     const {next, matcher: matchers = [], localeResolver, userIdResolver} = args[0];
+
+    // The proxy is the first Croct code to load, so subscribing here leaves the fewest requests untimed.
+    trackResponse();
 
     const matchesProxy = createMatcher((Array.isArray(matchers) ? matchers : [matchers]).flatMap(
         definition => (

@@ -12,6 +12,7 @@ import {resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
 import type {RouteContext} from '@/headers';
+import {startTiming} from '@/serverTiming';
 
 jest.mock(
     'next/headers',
@@ -55,6 +56,14 @@ jest.mock(
         __esModule: true,
         ...jest.requireActual('@/config/timeout'),
         getDefaultFetchTimeout: jest.fn(),
+    }),
+);
+
+jest.mock(
+    '@/serverTiming',
+    () => ({
+        __esModule: true,
+        startTiming: jest.fn(),
     }),
 );
 
@@ -484,5 +493,20 @@ describe('fetchContent', () => {
             static: staticContent,
             baseEndpointUrl: process.env.NEXT_PUBLIC_CROCT_BASE_ENDPOINT_URL,
         }));
+    });
+
+    it.each([true, false])('should measure the fetch (static: %s)', async staticContent => {
+        const content: FetchResponse<any> = {
+            content: {
+                _component: 'component',
+            },
+        };
+
+        jest.mocked(resolveRequestContext).mockResolvedValue(request);
+        jest.mocked(loadContent).mockResolvedValue(content);
+
+        await expect(fetchContent<any, any>('home-hero@1', {static: staticContent})).resolves.toBe(content);
+
+        expect(startTiming).toHaveBeenLastCalledWith('Croct fetch home-hero@1');
     });
 });
