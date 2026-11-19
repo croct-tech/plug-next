@@ -12,6 +12,7 @@ import {resolveRequestContext} from '@/config/context';
 import {getDefaultFetchTimeout} from '@/config/timeout';
 import {getApiKey} from '@/config/security';
 import type {RouteContext} from '@/headers';
+import {startTiming} from '@/serverTiming';
 
 jest.mock(
     'next/headers',
@@ -55,6 +56,14 @@ jest.mock(
         __esModule: true,
         ...jest.requireActual('@/config/timeout'),
         getDefaultFetchTimeout: jest.fn(),
+    }),
+);
+
+jest.mock(
+    '@/serverTiming',
+    () => ({
+        __esModule: true,
+        startTiming: jest.fn(),
     }),
 );
 
@@ -372,6 +381,15 @@ describe('evaluation', () => {
                 },
                 logger: expect.any(FilteredLogger),
             });
+        });
+
+        it('should measure the evaluation', async () => {
+            jest.mocked(resolveRequestContext).mockResolvedValue(request);
+            jest.mocked(executeQuery).mockResolvedValue(true);
+
+            await expect(evaluate('true')).resolves.toBe(true);
+
+            expect(startTiming).toHaveBeenLastCalledWith('Croct evaluate');
         });
     });
 

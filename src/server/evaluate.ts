@@ -12,6 +12,7 @@ import type {RouteContext} from '@/headers';
 import {isAppRouter} from '@/headers';
 import {getEnvEntry, getEnvFlag} from '@/config/env';
 import {isDynamicServerError} from '@/errors';
+import {startTiming} from '@/serverTiming';
 
 export type EvaluationOptions<T extends JsonValue = JsonValue> = Omit<BaseOptions<T>, 'apiKey' | 'appId'> & {
     route?: RouteContext,
@@ -72,7 +73,7 @@ export async function evaluate<T extends JsonValue>(query: string, options: Eval
             }
             : {}
         ),
-    });
+    }).finally(startTiming('Croct evaluate'));
 }
 
 export async function cql<T extends JsonValue>(fragments: TemplateStringsArray, ...args: JsonValue[]): Promise<T> {

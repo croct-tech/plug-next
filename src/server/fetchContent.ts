@@ -16,6 +16,7 @@ import {getDefaultFetchTimeout} from '@/config/timeout';
 import type {RouteContext} from '@/headers';
 import {getEnvEntry, getEnvFlag, getEnvValue} from '@/config/env';
 import {isDynamicServerError} from '@/errors';
+import {startTiming} from '@/serverTiming';
 
 export type DynamicContentOptions<T extends JsonObject = JsonObject> = Omit<DynamicOptions<T>, 'apiKey' | 'appId'>;
 
@@ -59,7 +60,7 @@ export async function fetchContent<
             ...commonOptions,
             ...rest,
             ...(preferredLocale !== null && {preferredLocale: preferredLocale}),
-        });
+        }).finally(startTiming(`Croct fetch ${slotId}`));
     }
 
     let context: RequestContext;
@@ -104,5 +105,5 @@ export async function fetchContent<
         },
         ...commonOptions,
         ...rest,
-    });
+    }).finally(startTiming(`Croct fetch ${slotId}`));
 }
