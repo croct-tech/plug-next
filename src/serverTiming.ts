@@ -2,7 +2,13 @@ import type {AsyncLocalStorage} from 'node:async_hooks';
 import type {ServerResponse} from 'node:http';
 import {getEnvFlag} from '@/config/env';
 
-type Storage = AsyncLocalStorage<ServerResponse>;
+type TimedResponse = {
+    response: ServerResponse,
+    // Node.js replaces the trailers on every addTrailers() call, so they are accumulated here.
+    trailers: string[],
+};
+
+type Storage = AsyncLocalStorage<TimedResponse>;
 
 // The HTTP hook is process-wide, so the proxy and render bundles, as well as
 // ESM and CJS copies of the package, must share a single subscription.
@@ -34,12 +40,12 @@ export function trackResponse(): Storage | null {
         const channel = globalThis.process.getBuiltinModule('node:diagnostics_channel');
         const requestStorage = new (globalThis as typeof globalThis & {
             AsyncLocalStorage: typeof AsyncLocalStorage,
-        }).AsyncLocalStorage<ServerResponse>();
+        }).AsyncLocalStorage<TimedResponse>();
 
         // shortcut: requests received before this subscription are not timed, which in practice
         // is the first request after boot. Subscribe from instrumentation.ts if that ever matters.
         channel.subscribe('http.server.request.start', message => {
-            requestStorage.enterWith((message as {response: ServerResponse}).response);
+            requestStorage.enterWith({response: (message as {response: ServerResponse}).response, trailers: []});
         });
 
         storage = requestStorage;
@@ -59,11 +65,13 @@ export function trackResponse(): Storage | null {
  * @internal
  */
 export function startTiming(description: string): (() => void) | undefined {
-    const response = trackResponse()?.getStore();
+    const scope = trackResponse()?.getStore();
 
-    if (response === undefined) {
+    if (scope === undefined) {
         return undefined;
     }
+
+    const {response, trailers} = scope;
 
     const start = performance.now();
 
@@ -75,7 +83,8 @@ export function startTiming(description: string): (() => void) | undefined {
         if (response.headersSent) {
             // Ignored by Node.js unless the response is chunked, which is always
             // the case for streamed renders.
-            response.addTrailers({'Server-Timing': metric});
+            trailers.push(metric);
+            response.addTrailers({'Server-Timing': trailers.join(', ')});
         } else {
             response.appendHeader('Server-Timing', metric);
         }

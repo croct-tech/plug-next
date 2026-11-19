@@ -42,7 +42,7 @@ describe('serverTiming', () => {
         expect(startTiming('Croct evaluate')).toBeUndefined();
     });
 
-    it('should report timings as a header until the response starts and as a trailer afterwards', async () => {
+    it('should report timings as headers until the response starts and as trailers afterwards', async () => {
         process.env.CROCT_SERVER_TIMING = 'true';
 
         trackResponse();
@@ -55,6 +55,8 @@ describe('serverTiming', () => {
             await Promise.reject(new Error('timeout'))
                 .finally(startTiming('Croct "evaluate",\r\n'))
                 .catch(() => {});
+
+            await Promise.resolve().finally(startTiming('Croct fetch home-banner@2'));
 
             response.end();
         });
@@ -72,6 +74,8 @@ describe('serverTiming', () => {
         server.close();
 
         expect(response.headers['server-timing']).toMatch(/^croct;desc="Croct fetch home-hero@1";dur=\d+\.\d$/);
-        expect(response.trailers['server-timing']).toMatch(/^croct;desc="Croct evaluate";dur=\d+\.\d$/);
+        expect(response.trailers['server-timing']).toMatch(
+            /^croct;desc="Croct evaluate";dur=\d+\.\d, croct;desc="Croct fetch home-banner@2";dur=\d+\.\d$/,
+        );
     });
 });
